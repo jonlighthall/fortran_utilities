@@ -4,7 +4,7 @@ program readtest
   real(kind=srk), dimension(:), allocatable :: r1,r2
   real(kind=srk), dimension(:,:), allocatable :: tl1,tl2
   integer :: i,n1,io,ln1,ln2,unit1,unit2,n2,ln3,nerr,ns1,j,ls,ns2,nerr2
-  character(len=128) :: fname1, fname2, tlthresh,dummy
+  character(len=256) :: fname1, fname2, tlthresh,dummy
   real(kind=srk)::dtl,dtl_max
   ! set thresholds
   real(kind=srk),parameter :: rdiff=0.01
@@ -105,7 +105,6 @@ program readtest
      read(unit1,*) r1(i), (tl1(i,j), j=1,ns1)
   end do
   close(unit1)
-
   allocate(r2(n1),tl2(n1,ns1))
   rewind(unit2)
   do i = 1,n1

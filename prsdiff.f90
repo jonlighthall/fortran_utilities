@@ -6,9 +6,10 @@ program readtest
   complex(kind=srk), dimension(:,:), allocatable :: p1,p2
   integer :: i,n1,io,ln1,ln2,unit1,unit2,n2,ln3,nerr,ns1,j,ls,ns2,np1
   character(len=256) :: fname1, fname2, tlthresh,dummy
+  real(kind=srk)::dp_max,dp
+  ! set thresholds
   real(kind=srk),parameter :: rdiff=0.01
-!  real(kind=srk)::dtl,dtl_max,tldiff=0.01
-  real(kind=srk)::pdiff=1e-3,dp_max,dp
+  real(kind=srk) :: pdiff=1e-3
 
   call get_command_argument(1,fname1,ln1)
   call get_command_argument(2,fname2,ln2)
@@ -26,24 +27,21 @@ program readtest
      read(tlthresh,*)pdiff
   end if
 
-  !     open file
+  !     open files
   open (newunit=unit1, file = fname1, status = 'old')
   open (newunit=unit2, file = fname2, status = 'old')
+
   !     check file length
-  n1=0
-  ns1=0
-  ls=0
+  n1=0  ! number of lines
+  ns1=0 ! number of spaces (delimiters)
+  ls=0  ! position of last space
   do
      if (n1.eq.0) then
         read(unit1,'(a)',iostat=io) dummy
-        print *,dummy
         do j=1,len(trim(dummy))
-
            if(dummy(j:j) == ' ') then
-              if (j.eq.(ls+1)) then
-                 !     same space
-              else
-                 !     new space
+              if (j.eq.(ls+1)) then ! same space
+              else                  ! new space
                  ns1=ns1+1
               endif
               ls =j
@@ -64,7 +62,6 @@ program readtest
   do
      if (n2.eq.0) then
         read(unit2,'(a)',iostat=io) dummy
-        !     print *,dummy
         do j=1,len(trim(dummy))
            if(dummy(j:j) == ' ') then
               if (j.eq.(ls+1)) then
@@ -102,7 +99,6 @@ program readtest
      close(unit2)
      stop 'delim'
   endif
-
 
   !     read file
   allocate(r1(n1),tl1(n1,ns1),p1(n1,np1),pr1(n1,np1),pi1(n1,np1))
@@ -142,18 +138,13 @@ program readtest
      enddo
   enddo
 
-
   !     print summary
   nerr=0
-  !  dtl_max=0
   dp_max=0
   do i = 1,n1
      do j=1,np1
         dp=abs(p1(i,j)-p2(i,j))
-        !        dtl=abs(tl1(i,j)-tl2(i,j))
-        !        if (dtl.gt.dtl_max) dtl_max=dtl
         if (dp.gt.dp_max) dp_max=dp
-        !               if(dtl.gt.tldiff) then
         if(dp.gt.pdiff) then
            if (nerr.eq.0) then
               print'(/a)','   ix   iz    range    tl1    tl2 | diff'
