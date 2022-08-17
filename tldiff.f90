@@ -3,11 +3,13 @@ program readtest
   integer,parameter :: srk = selected_real_kind(2)
   real(kind=srk), dimension(:), allocatable :: r1,r2
   real(kind=srk), dimension(:,:), allocatable :: tl1,tl2
-  integer :: i,n1,io,ln1,ln2,unit1,unit2,n2,ln3,nerr,ns1,j,ls,ns2
+  integer :: i,n1,io,ln1,ln2,unit1,unit2,n2,ln3,nerr,ns1,j,ls,ns2,nerr2
   character(len=128) :: fname1, fname2, tlthresh,dummy
+  real(kind=srk)::dtl,dtl_max
+  ! set thresholds
   real(kind=srk),parameter :: rdiff=0.01
-  real(kind=srk)::dtl,dtl_max,tldiff=0.01
-
+  real(kind=srk)::tldiff=0.01
+  real(kind=srk),parameter :: tl_red=0.1, comp_diff=0.001
   call get_command_argument(1,fname1,ln1)
   call get_command_argument(2,fname2,ln2)
   call get_command_argument(3,tlthresh,ln3)
@@ -24,27 +26,22 @@ program readtest
      read(tlthresh,*)tldiff
   end if
 
-
-  !     open file
+  !     open files
   open (newunit=unit1, file = fname1, status = 'old')
   open (newunit=unit2, file = fname2, status = 'old')
+
   !     check file length
-  n1=0
-  ns1=0
-  ls=0
+  n1=0  ! number of lines
+  ns1=0 ! number of spaces (delimiters)
+  ls=0  ! position of last space
   do
      if (n1.eq.0) then
         read(unit1,'(a)',iostat=io) dummy
-        !     print *,dummy
         do j=1,len(trim(dummy))
-
            if(dummy(j:j) == ' ') then
-              if (j.eq.(ls+1)) then
-                 !     same space
-              else
-                 !     new space
+              if (j.eq.(ls+1)) then ! same space
+              else                  ! new space
                  ns1=ns1+1
-                 !     print *,j,' yes! ',ns1
               endif
               ls =j
            endif
@@ -63,7 +60,6 @@ program readtest
   do
      if (n2.eq.0) then
         read(unit2,'(a)',iostat=io) dummy
-        !     print *,dummy
         do j=1,len(trim(dummy))
            if(dummy(j:j) == ' ') then
               if (j.eq.(ls+1)) then
@@ -102,7 +98,6 @@ program readtest
      stop 'delim'
   endif
 
-
   !     read file
   allocate(r1(n1),tl1(n1,ns1))
   rewind(unit1)
@@ -129,6 +124,7 @@ program readtest
 
   !     print summary
   nerr=0
+  nerr2=0
   dtl_max=0
   do i = 1,n1
      do j=1,ns1
@@ -140,10 +136,17 @@ program readtest
               print*, repeat('-',33),'+',repeat('-',6)
            end if
            nerr=nerr+1
-           write(*,'(2i5,f9.2, 2f7.1,a,f4.1)') i,j,r1(i), tl1(i,j),tl2(i,j),' | ',dtl
+           write(*,'(2i5,f9.2, 2f7.1,a)',advance='no') i,j,r1(i), tl1(i,j),tl2(i,j),' | '
+           if(dtl.gt.(tl_red+comp_diff)) then
+              print '(a,f4.1,a)',''//achar(27)//'[31m',dtl,''//achar(27)//'[0m'
+              nerr2=nerr2+1
+           else
+              write(*,'(f4.1)') dtl
+           endif
         end if
      end do
   enddo
   print '(/a,f4.1,a,i0)',' number of errors found (>',tldiff,'): ',nerr
+  print '(a,f4.1,a,i0)',' number of errors found (>',tl_red+comp_diff,'): ',nerr2
   print '(a,f4.1)',' maximum error : ',dtl_max
 end program readtest
