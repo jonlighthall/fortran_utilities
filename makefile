@@ -12,8 +12,11 @@ warnings = -Wall -Wsurprising -W -pedantic -Warray-temporaries		\
 #
 # fortran compiler flags
 FCFLAGS =  $(options) $(warnings)
-FC.COMPILE.o = $(FC) $(FCFLAGS) $(compile_flags) $(output_flags) $(module_flags)
-FC.COMPILE.mod = $(FC) $(FCFLAGS) $(compile_flags) -o $(OBJDIR)/$*.o $(module_flags)
+#
+# fortran compile flags
+FC.COMPILE = $(FC) $(FCFLAGS) $(compile_flags) $(module_flags)
+FC.COMPILE.o   = $(FC.COMPILE) $(output_flags)
+FC.COMPILE.mod = $(FC.COMPILE) -o $(OBJDIR)/$*.o
 #
 # fortran link flags
 flflags = $(output_flags) $^
