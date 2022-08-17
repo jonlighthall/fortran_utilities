@@ -14,10 +14,6 @@ program readtest
   call get_command_argument(1,fname1,ln1)
   call get_command_argument(2,fname2,ln2)
   call get_command_argument(3,tlthresh,ln3)
-
-  print *,'epsilon = ',epsilon(tl1)
-  print *,'  min u = ',2.**(-23)
-  print *,' tl eps = ',-20*log10(2.**(-23))
   print *,' tl max = ',tlmax
 
   !     set file names
