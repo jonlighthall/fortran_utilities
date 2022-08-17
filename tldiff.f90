@@ -3,16 +3,22 @@ program readtest
   integer,parameter :: srk = selected_real_kind(2)
   real(kind=srk), dimension(:), allocatable :: r1,r2
   real(kind=srk), dimension(:,:), allocatable :: tl1,tl2
-  integer :: i,n1,io,ln1,ln2,unit1,unit2,n2,ln3,nerr,ns1,j,ls,ns2,nerr2
+  integer :: i,n1,io,ln1,ln2,unit1,unit2,n2,ln3,nerr,ns1,j,ls,ns2,nerr2,nerr3
   character(len=256) :: fname1, fname2, tlthresh,dummy
   real(kind=srk)::dtl,dtl_max
   ! set thresholds
   real(kind=srk),parameter :: rdiff=0.01
   real(kind=srk)::tldiff=0.01
   real(kind=srk),parameter :: tl_red=0.1, comp_diff=0.001
+  real(kind=srk),parameter :: tlmax=-20*log10(2.**(-23))
   call get_command_argument(1,fname1,ln1)
   call get_command_argument(2,fname2,ln2)
   call get_command_argument(3,tlthresh,ln3)
+
+  print *,'epsilon = ',epsilon(tl1)
+  print *,'  min u = ',2.**(-23)
+  print *,' tl eps = ',-20*log10(2.**(-23))
+  print *,' tl max = ',tlmax
 
   !     set file names
   if (ln1.eq.0) then
@@ -124,6 +130,7 @@ program readtest
   !     print summary
   nerr=0
   nerr2=0
+  nerr3=0
   dtl_max=0
   do i = 1,n1
      do j=1,ns1
@@ -135,17 +142,42 @@ program readtest
               print*, repeat('-',33),'+',repeat('-',6)
            end if
            nerr=nerr+1
-           write(*,'(2i5,f9.2, 2f7.1,a)',advance='no') i,j,r1(i), tl1(i,j),tl2(i,j),' | '
+           write(*,'(2i5,f9.2)',advance='no') i,j,r1(i)
+
+           if(tl1(i,j).gt.tlmax)then
+              write(*,'(a,f7.1,a)',advance='no') ''//achar(27)//'[31m',tl1(i,j),''//achar(27)//'[0m'
+           else
+              write(*,'(f7.1)',advance='no') tl1(i,j)
+           endif
+
+           if(tl2(i,j).gt.tlmax)then
+              write(*,'(a,f7.1,a,a)',advance='no') ''//achar(27)//'[31m',tl2(i,j),''//achar(27)//'[0m',' | '
+           else
+              write(*,'(f7.1,a)',advance='no') tl2(i,j),' | '
+           endif
+
            if(dtl.gt.(tl_red+comp_diff)) then
               print '(a,f4.1,a)',''//achar(27)//'[31m',dtl,''//achar(27)//'[0m'
               nerr2=nerr2+1
            else
               write(*,'(f4.1)') dtl
            endif
+
+           if((tl1(i,j).lt.tlmax).and.(tl2(i,j).lt.tlmax).and.(dtl.gt.(tl_red+comp_diff)))then
+              nerr3=nerr3+1
+           endif
+
         end if
      end do
   enddo
-  print '(/a,f4.1,a,i0)',' number of errors found (>',tldiff,'): ',nerr
-  print '(a,f4.1,a,i0)',' number of errors found (>',tl_red+comp_diff,'): ',nerr2
-  print '(a,f4.1)',' maximum error : ',dtl_max
+  print '(/a,f6.3,a,i0)',' number of errors found (>',tldiff,'): ',nerr
+  if(tl_red.ge.tldiff) then
+     print '(a,f6.3,a,i0)',' number of errors found (>',tl_red+comp_diff,'): ',nerr2
+     print '(a,f6.3,a,f5.1,a,i0)',' number of errors found (>',tl_red+comp_diff,' and tl < ',tlmax,'): ',nerr3
+  endif
+  print '(a,f6.3)',' maximum error : ',dtl_max
+
+  if (nerr3.gt.0) then
+     stop 1
+  endif
 end program readtest
