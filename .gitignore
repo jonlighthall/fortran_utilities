@@ -1,0 +1,16 @@
+# Compiled Object files
+*.o
+*.obj
+obj/
+
+# Executables
+*.exe
+*.out
+bin/
+
+# Emacs
+*~
+\#*#
+
+# Git 
+*.~*~
