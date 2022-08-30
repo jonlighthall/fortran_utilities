@@ -6,13 +6,19 @@ program readtest
   integer :: i,n1,io,ln1,ln2,unit1,unit2,n2,ln3,nerr,ns1,j,ls,ns2,nerr2,nerr3
   character(len=256) :: fname1, fname2, tlthresh,dummy
   real(kind=srk)::dtl,dtl_max
+  ! ----------------------------------------------------------
   ! set thresholds
   real(kind=srk),parameter :: rdiff=0.01
-  real(kind=srk)::tldiff=0.01
-  real(kind=srk),parameter :: tl_red=0.1, comp_diff=0.001
+  real(kind=srk)::tldiff=0.001
+  real(kind=srk),parameter :: tl_red=0.01, comp_diff=0.001
   real(kind=srk),parameter :: tlmax=-20*log10(2.**(-23))
+  ! ----------------------------------------------------------
   integer :: nm1,nm2
   real(kind=srk)::f1,f2
+  integer,dimension(:),allocatable :: dp1,dp2,dp_check
+  real,dimension(:),allocatable :: p_check
+  integer :: ld,pln,fln,dln,wln,aln
+  character fmt*64
   call get_command_argument(1,fname1,ln1)
   call get_command_argument(2,fname2,ln2)
   call get_command_argument(3,tlthresh,ln3)
@@ -41,11 +47,13 @@ program readtest
   do
      if (n1.eq.0) then
         read(unit1,*) nm1,f1
-        print *,'nm1 = ',nm1
-        print *,'f1 = ',f1
-        
+        print '(a)', 'header line:'
+        print '(a,i0)',' nm1 = ',nm1
+        print '(a,f7.1)','  f1 = ',f1
+
         read(unit1,'(a)',iostat=io) dummy
-             print *,dummy
+        print *,'first line'
+        print *,dummy
         do j=1,len(trim(dummy))
            if(dummy(j:j) == ' ') then
               if (j.eq.(ls+1)) then ! same space
@@ -55,6 +63,24 @@ program readtest
               ls =j
            endif
         enddo
+
+        ! check precision
+        allocate(dp1(ns1+1))
+        i=0
+        ls=0
+        do j=1,len(trim(dummy))
+           if(dummy(j:j)=='.')ld=j
+           if(dummy(j:j)==' ')then
+              if(j.eq.(ls+1))then ! same space
+              else                ! new space
+                 i=i+1
+                 dp1(i)=j-ld-1
+              endif
+              ls=j
+           endif
+        enddo
+        dp1(ns1+1)=j-ld-1
+        print*,dp1
      else
         read(unit1,*,iostat=io)
      endif
@@ -62,6 +88,7 @@ program readtest
      n1=n1+1
   enddo
   print '(2a,i5,a,i3,a)',trim(fname1),' has ',n1,' lines and ',ns1,' delimiters'
+
   if (n1.eq.nm1) then
      print *, 'number of lines matches number of environments: ',n1
   else
@@ -71,7 +98,7 @@ program readtest
      close(unit1)
      close(unit2)
      stop 'env'
-  endif  
+  endif
 
   n2=0
   ns2=0
@@ -83,7 +110,7 @@ program readtest
         print *,'f2 = ',f2
 
         read(unit2,'(a)',iostat=io) dummy
-             print *,dummy
+        print *,dummy
         do j=1,len(trim(dummy))
            if(dummy(j:j) == ' ') then
               if (j.eq.(ls+1)) then
@@ -93,6 +120,23 @@ program readtest
               ls =j
            endif
         enddo
+        ! check precision
+        allocate(dp2(ns2+1))
+        i=0
+        ls=0
+        do j=1,len(trim(dummy))
+           if(dummy(j:j)=='.')ld=j
+           if(dummy(j:j)==' ')then
+              if(j.eq.(ls+1))then ! same space
+              else                ! new space
+                 i=i+1
+                 dp2(i)=j-ld-1
+              endif
+              ls=j
+           endif
+        enddo
+        dp2(ns2+1)=j-ld-1
+        print*,dp2
      else
         read(unit2,*,iostat=io)
      endif
@@ -114,7 +158,7 @@ program readtest
   if (ns1.eq.ns2) then
      print *, 'number of file delimiters match: ',ns1
   else
-     print *, 'number file delimiters do not match'
+     print *, 'number of file delimiters do not match'
      print *, 'delim file 1 = ',ns1
      print *, 'delim file 2 = ',ns2
      close(unit1)
@@ -125,14 +169,14 @@ program readtest
   !     read file
   allocate(r1(n1),tl1(n1,ns1))
   rewind(unit1)
-  read(unit1,*)dummy
+  read(unit1,*)dummy ! read header line
   do i = 1,n1
      read(unit1,*) r1(i), (tl1(i,j), j=1,ns1)
   end do
   close(unit1)
   allocate(r2(n1),tl2(n1,ns1))
   rewind(unit2)
-  read(unit2,*)dummy
+  read(unit2,*)dummy ! read header line
   do i = 1,n1
      read(unit2,*) r2(i), (tl2(i,j),j=1,ns1)
      if (abs(r1(i)-r2(i)).gt.rdiff) then
@@ -147,6 +191,16 @@ program readtest
   close(unit2)
   print *, 'ranges match'
 
+  ! determine precision to check
+  allocate(dp_check(ns1+1),p_check(ns1+1))
+  do i=1,ns1+1
+     dp_check(i)=min(dp1(i),dp2(i))
+     p_check(i)=10.**(-dp_check(i))
+     print'(es10.2)',p_check(i)
+  enddo
+  print*,'minimum precisions per column'
+  print*,dp_check
+
   !     print summary
   nerr=0
   nerr2=0
@@ -155,36 +209,42 @@ program readtest
   do i = 1,n1
      do j=1,ns1
         dtl=abs(tl1(i,j)-tl2(i,j))
-        if (dtl.gt.dtl_max) dtl_max=dtl
-        if(dtl.gt.tldiff) then
-           if (nerr.eq.0) then
-              print'(/a)','   ix   iz    range    tl1    tl2 | diff'
-              print*, repeat('-',33),'+',repeat('-',6)
-           end if
+
+        tldiff=p_check(j+1)/2
+        if(dtl-tldiff.gt.epsilon(dtl)) then
+                   if (dtl.gt.dtl_max) dtl_max=dtl
+           if (nerr.eq.0) then ! print table header on first error
+              print'(/a)','   ix   iz    range   tl1          tl2        |  diff        thresh'
+              print*, repeat('-',45),'+',repeat('-',28)
+           endif
            nerr=nerr+1
            write(*,'(2i5,f9.2)',advance='no') i,j,r1(i)
+           pln=11
+           wln=4
+           dln=dp_check(j+1)+1
+           aln=floor(log10(tl1(i,j)))
+           fln=aln+1+dln+1
+           write(fmt,'(a,i0,a,i0,a,i0,a,i0,a)')'(',wln-aln+1,'X,f',fln&
+                &,'.',dln,',',max(0,pln-fln-(wln-aln))+1,'X)'
+           write(*,fmt,advance='no') tl1(i,j)
+           write(*,fmt,advance='no') tl2(i,j)
+           write(*,'(a)',advance='no') ' | '
+           write(*,fmt,advance='no') dtl
 
-
-              write(*,'(f7.1)',advance='no') tl1(i,j)
-
-              write(*,'(f7.1,a)',advance='no') tl2(i,j),' | '
-
-              write(*,'(f7.4)') dtl
-
+           write(*,fmt) tldiff
 
            if((tl1(i,j).lt.tlmax).and.(tl2(i,j).lt.tlmax).and.(dtl.gt.(tl_red+comp_diff)))then
               nerr3=nerr3+1
            endif
-
-        end if
-     end do
+        endif
+     enddo
   enddo
   print '(/a,f6.3,a,i0)',' number of errors found (>',tldiff,'): ',nerr
   if(tl_red.ge.tldiff) then
      print '(a,f6.3,a,i0)',' number of errors found (>',tl_red+comp_diff,'): ',nerr2
      print '(a,f6.3,a,f5.1,a,i0)',' number of errors found (>',tl_red+comp_diff,' and tl < ',tlmax,'): ',nerr3
   endif
-  print '(a,f6.3)',' maximum error : ',dtl_max
+  print '(a,f8.5)',' maximum error : ',dtl_max
 
   if (nerr3.gt.0) then
      stop 1
