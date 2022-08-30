@@ -10,8 +10,10 @@ mkdir -pv ${bin_usr}
 BASH_DIR="$( cd "$( dirname "$0" )" && pwd )"
 bin_local=${BASH_DIR}/bin
 ext=.exe
-for prog in prsdiff \
-	    tldiff
+for prog in cpddiff \
+	    prsdiff \
+	    tldiff \
+	    tsdiff
 do
 
     link=${bin_usr}/$prog  
