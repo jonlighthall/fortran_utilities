@@ -1,7 +1,6 @@
 # fortran compiler
 FC = gfortran
 # general flags
-compile_flags = -c $<
 output_flags = -o $@
 #module_flags = -J $(MODDIR)
 options = -std=f2018 -fimplicit-none
@@ -11,16 +10,17 @@ warnings = -Wall -Wsurprising -W -pedantic -Warray-temporaries		\
 -Wreal-q-constant -Wuse-without-only -Wrealloc-lhs-all -Wno-tabs	\
 #
 # fortran compiler flags
-FCFLAGS =  $(options) $(warnings)
+FCFLAGS =  $(options) $(warnings) $(module_flags)
 #
 # fortran compile flags
-FC.COMPILE = $(FC) $(FCFLAGS) $(compile_flags) $(module_flags)
+compile_flags = -c $<
+FC.COMPILE = $(FC) $(FCFLAGS) $(compile_flags) 
 FC.COMPILE.o   = $(FC.COMPILE) $(output_flags)
 FC.COMPILE.mod = $(FC.COMPILE) -o $(OBJDIR)/$*.o
 #
 # fortran link flags
 flflags = $(output_flags) $^
-FC.LINK = $(FC) $(FCFLAGS) $(flflags) $(module_flags)
+FC.LINK = $(FC) $(FCFLAGS) $(flflags)
 #
 # define subdirectories
 OBJDIR := obj
