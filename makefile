@@ -6,16 +6,18 @@ compile = -c $<
 output = -o $@
 includes = -I $(INCDIR) -J $(MODDIR)
 options = -std=f2008 -fimplicit-none
-options_new = -std=f2018 -fcheck=all
-#options := $(options) $(options_new)
+options_new = -std=f2018
+options := $(options) $(options_new)
 warnings = -Wall -Wsurprising -W -pedantic -Warray-temporaries	\
 -Wcharacter-truncation -Wimplicit-interface -Wintrinsics-std
 warnings_new = -Wconversion-extra -Wimplicit-procedure	\
 -Winteger-division -Wreal-q-constant -Wuse-without-only	\
 -Wrealloc-lhs-all
-#warnings := $(warnings) $(warnings_new)
-debug = -g -fbacktrace
+warnings := $(warnings) $(warnings_new)
+debug = -g -fbacktrace					\
 -ffpe-trap=invalid,zero,overflow,underflow,denormal
+debug_new = -fcheck=all
+debug:= $(debug) $(debug_new)
 #
 # fortran compiler flags
 FCFLAGS = $(options) $(warnings) $(debug)
