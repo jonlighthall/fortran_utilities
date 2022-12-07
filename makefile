@@ -5,12 +5,16 @@ FC = gfortran
 compile = -c $<
 output = -o $@
 includes = -I $(INCDIR) -J $(MODDIR)
-options = -std=f2018 -fimplicit-none
+options = -std=f2008 -fimplicit-none
+options_new = -std=f2018 -fcheck=all
+#options := $(options) $(options_new)
 warnings = -Wall -Wsurprising -W -pedantic -Warray-temporaries	\
--Wcharacter-truncation -Wconversion-extra -Wimplicit-interface	\
--Wimplicit-procedure -Winteger-division -Wintrinsics-std	\
--Wreal-q-constant -Wuse-without-only -Wrealloc-lhs-all
-debug = -g -fbacktrace -fcheck=all			\
+-Wcharacter-truncation -Wimplicit-interface -Wintrinsics-std
+warnings_new = -Wconversion-extra -Wimplicit-procedure	\
+-Winteger-division -Wreal-q-constant -Wuse-without-only	\
+-Wrealloc-lhs-all
+#warnings := $(warnings) $(warnings_new)
+debug = -g -fbacktrace
 -ffpe-trap=invalid,zero,overflow,underflow,denormal
 #
 # fortran compiler flags
