@@ -1,5 +1,10 @@
 program readtest
   implicit none
+  interface
+     integer function getunit(unit)
+       integer, intent(out), optional :: unit
+     end function getunit
+  end interface
   integer,parameter :: srk = selected_real_kind(2)
   real(kind=srk), dimension(:), allocatable :: r1,r2
   real(kind=srk), dimension(:,:), allocatable :: tl1,tl2
@@ -37,8 +42,8 @@ program readtest
   end if
 
   !     open files
-  open (newunit=unit1, file = fname1, status = 'old')
-  open (newunit=unit2, file = fname2, status = 'old')
+  open (getunit(unit1), file = fname1, status = 'old')
+  open (getunit(unit2), file = fname2, status = 'old')
 
   !     check file length
   n1=0  ! number of lines
