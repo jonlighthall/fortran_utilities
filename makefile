@@ -1,59 +1,126 @@
 # fortran compiler
 FC = gfortran
+#
 # general flags
-output_flags = -o $@
-#module_flags = -J $(MODDIR)
+compile = -c $<
+output = -o $@
+includes = -I $(INCDIR) -J $(MODDIR)
 options = -std=f2018 -fimplicit-none
-warnings = -Wall -Wsurprising -W -pedantic -Warray-temporaries		\
--Wcharacter-truncation -Wconversion-extra -Wimplicit-interface		\
--Wimplicit-procedure -Winteger-division -Wintrinsics-std		\
--Wreal-q-constant -Wuse-without-only -Wrealloc-lhs-all -Wno-tabs	\
+warnings = -Wall -Wsurprising -W -pedantic -Warray-temporaries	\
+-Wcharacter-truncation -Wconversion-extra -Wimplicit-interface	\
+-Wimplicit-procedure -Winteger-division -Wintrinsics-std	\
+-Wreal-q-constant -Wuse-without-only -Wrealloc-lhs-all
+debug = -g -fbacktrace -fcheck=all			\
+-ffpe-trap=invalid,zero,overflow,underflow,denormal
 #
 # fortran compiler flags
-FCFLAGS =  $(options) $(warnings) $(module_flags)
+FCFLAGS = $(options) $(warnings) $(debug)
+F77.FLAGS = -fd-lines-as-comments
+F90.FLAGS = 
+FC.COMPILE = $(FC) $(FCFLAGS) $(compile)
+FC.COMPILE.o = $(FC.COMPILE)  $(output) $(F77.FLAGS)
+FC.COMPILE.o.f90 = $(FC.COMPILE) $(output) $(F90.FLAGS)
+FC.COMPILE.mod = $(FC.COMPILE) -o $(OBJDIR)/$*.o $(F90.FLAGS)
 #
-# fortran compile flags
-compile_flags = -c $<
-FC.COMPILE = $(FC) $(FCFLAGS) $(compile_flags) 
-FC.COMPILE.o   = $(FC.COMPILE) $(output_flags)
-FC.COMPILE.mod = $(FC.COMPILE) -o $(OBJDIR)/$*.o
-#
-# fortran link flags
-flflags = $(output_flags) $^
-FC.LINK = $(FC) $(FCFLAGS) $(flflags)
+# fortran linker flags
+FLFLAGS = $(output) $^
+FC.LINK = $(FC) $(FLFLAGS)
 #
 # define subdirectories
 OBJDIR := obj
 MODDIR := mod
 BINDIR := bin
+INCDIR := inc
+VPATH = $(INCDIR)
 #
-# dependencies
-SRC=$(wildcard *.f90)
-OBJS = $(addprefix $(OBJDIR)/,$(SRC:.f90=.o))
-
-MODS = 
-SUBS = 
-FUNS = 
-DEPS := $(addprefix $(OBJDIR)/,$(addsuffix .o,$(MODS) $(SUBS) $(FUNS)))
-MODS := $(addprefix $(MODDIR)/,$(addsuffix .mod,$(MODS)))
-
+# source files
+SRC.F77 = $(wildcard *.f)
+SRC.F90 = $(wildcard *.f90)
+SRC = $(SRC.F77) $(SRC.F90)
 #
-# executable name
-EXES = $(addprefix $(BINDIR)/,$(SRC:.f90=.exe))
+# objects
+OBJS.F77 = $(SRC.F77:.f=.o)
+OBJS.F90 = $(SRC.F90:.f90=.o)
+OBJS.all = $(OBJS.F77) $(OBJS.F90)
+#
+# dependencies (non-executables)
+MODS. = 
+SUBS. = 
+FUNS. = 
+DEPS. = $(MODS.) $(SUBS.) $(FUNS.)
+
+DEPS.o = $(addsuffix .o,$(DEPS.))
+OBJS.o = $(filter-out $(DEPS.o),$(OBJS.all))
+MODS.mod = $(addsuffix .mod,$(MODS.))
+
+DEPS := $(addprefix $(OBJDIR)/,$(DEPS.o))
+OBJS := $(addprefix $(OBJDIR)/,$(OBJS.o))
+MODS := $(addprefix $(MODDIR)/,$(MODS.mod))
+#
+# executables
+EXES = $(addprefix $(BINDIR)/,$(OBJS.o:.o=.exe))
 
 all: $(EXES) $(OBJS) $(DEPS) $(MODS)
 	@echo "$@ done"
+printvars:
+	@echo $@:
+	@echo
+	@echo "SRC = $(SRC)"
+	@echo
+	@echo "OBJS.all = $(OBJS.all)"
 
-$(BINDIR)/%.exe: $(OBJDIR)/%.o | $(BINDIR)
-	@echo "compiling executable $@..."
-	$(FC.LINK)
+	@echo	
+	@echo "----------------------------------------------------"
+	@echo
 
-$(OBJDIR)/%.o : %.f90 $(MODS) | $(OBJDIR)
-	@echo "compiling f90 object $@..."
+	@echo "MODS. = $(MODS.)"
+	@echo
+	@echo "SUBS. = $(SUBS.)"
+	@echo
+	@echo "FUNS. = $(FUNS.)"
+	@echo
+	@echo "DEPS. = $(DEPS.)"
+
+	@echo
+	@echo "----------------------------------------------------"
+	@echo
+
+	@echo "OBJS.o = $(OBJS.o)"
+	@echo
+	@echo "DEPS.o = $(DEPS.o)"
+	@echo
+	@echo "MODS.mod = $(MODS.mod)"
+
+	@echo
+	@echo "----------------------------------------------------"
+	@echo
+
+	@echo "EXES = $(EXES)"
+	@echo
+	@echo "OBJS = $(OBJS)"
+	@echo
+	@echo "DEPS = $(DEPS)"
+	@echo
+	@echo "MODS = $(MODS)"
+	@echo
+
+	@echo "$@ done"
+#
+# generic recipies
+$(BINDIR)/%.exe: $(OBJDIR)/%.o $(DEPS) | $(BINDIR)
+	@echo -e "\nlinking generic executable $@..."
+	$(FC.LINK)	
+$(OBJDIR)/%.o: %.f $(MODS) | $(OBJDIR)
+	@echo -e "\ncompiling generic object $@..."
 	$(FC.COMPILE.o)
-
-$(MODDIR)/%.mod : %.f90 | $(MODDIR)
-	@echo "compiling f90 module $@..."
+$(OBJDIR)/%.o: %.f90 $(MODS) | $(OBJDIR)
+	@echo -e "\ncompiling generic f90 object $@..."
+	$(FC.COMPILE.o.f90)
+$(MODDIR)/%.mod: %.f | $(OBJDIR) $(MODDIR)
+	@echo -e "\ncompiling generic module $@..."
+	$(FC.COMPILE.mod)
+$(MODDIR)/%.mod: %.f90 | $(OBJDIR) $(MODDIR)
+	@echo -e "\ncompiling generic f90 module $@..."
 	$(FC.COMPILE.mod)
 #
 # define directory creation
@@ -66,9 +133,13 @@ $(MODDIR):
 # keep intermediate object files
 .SECONDARY: $(OBJS) $(MODS)
 #
+# recipes without outputs
+.PHONY: clean out distclean
+#
+# clean up routines
 CMD = @rm -vfrd
 clean:
-	@echo removing files...	
+	@echo removing files...
 # remove compiled binaries
 	$(CMD) $(TARGET)
 	$(CMD) $(OBJDIR)/*.o
@@ -83,12 +154,15 @@ clean:
 	$(CMD) *.out
 	$(CMD) fort.*
 	@echo "$@ done"
-distclean: clean
+out:
+# remove outputs produced by executables
+	@echo "$@ done"
+distclean: clean out
 # remove Git versions
 	$(CMD) *.~*~
 # remove Emacs backup files
 	$(CMD) *~ \#*\#
 	@echo "$@ done"
-test: distclean all
+test: distclean printvars all
 # test the makefile
-	@echo "$@ done"	
+	@echo "$@ done"
