@@ -14,7 +14,7 @@ debug = -g -fbacktrace -fcheck=all			\
 -ffpe-trap=invalid,zero,overflow,underflow,denormal
 #
 # fortran compiler flags
-FCFLAGS = $(includes) $(options) $(warnings) $(debug)
+FCFLAGS = $(options) $(warnings) $(debug)
 F77.FLAGS = -fd-lines-as-comments
 F90.FLAGS = 
 FC.COMPILE = $(FC) $(FCFLAGS) $(compile)
