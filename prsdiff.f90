@@ -1,4 +1,8 @@
-program readtest
+program prsdiff
+  ! prs diff - calculate difference between two pressure files
+  !
+  ! JCL Aug 2022
+
   implicit none
   integer,parameter :: srk = selected_real_kind(2)
   real(kind=srk), dimension(:), allocatable :: r1,r2
