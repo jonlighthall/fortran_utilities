@@ -2,7 +2,6 @@ program prsdiff
   ! prs diff - calculate difference between two pressure files
   !
   ! JCL Aug 2022
-
   implicit none
   integer,parameter :: srk = selected_real_kind(2)
   real(kind=srk), dimension(:), allocatable :: r1,r2
@@ -11,10 +10,11 @@ program prsdiff
   integer :: i,n1,io,ln1,ln2,unit1,unit2,n2,ln3,nerr,ns1,j,ls,ns2,np1
   character(len=256) :: fname1, fname2, tlthresh,dummy
   real(kind=srk)::dp_max,dp
+  ! ----------------------------------------------------------
   ! set thresholds
   real(kind=srk),parameter :: rdiff=0.01
   real(kind=srk) :: pdiff=1e-3
-
+  ! ----------------------------------------------------------
   call get_command_argument(1,fname1,ln1)
   call get_command_argument(2,fname2,ln2)
   call get_command_argument(3,tlthresh,ln3)
@@ -58,7 +58,7 @@ program prsdiff
      n1=n1+1
   enddo
   print '(2a,i5,a,i3,a)',trim(fname1),' has ',n1,' lines and ',ns1,' delimiters'
-  np1=(ns1)/2
+  np1=(ns1)/2 ! number of complex pairs
 
   n2=0
   ns2=0
@@ -83,7 +83,7 @@ program prsdiff
   enddo
 
   if (n1.eq.n2) then
-     print *, 'file lengths match'
+     print *, 'file lengths match: ',n1
   else
      print *, 'file lengths do not match'
      print *, 'length file 1 = ',n1
@@ -94,9 +94,9 @@ program prsdiff
   endif
 
   if (ns1.eq.ns2) then
-     print *, 'file delimiters match'
+     print *, 'number of file delimiters match: ',ns1
   else
-     print *, 'file delimiters do not match'
+     print *, 'number of file delimiters do not match'
      print *, 'delim file 1 = ',ns1
      print *, 'delim file 2 = ',ns2
      close(unit1)
@@ -126,7 +126,7 @@ program prsdiff
   end do
   close(unit2)
   print *, 'ranges match'
-  ! calculate pressure
+  ! calculate complex pressure
   do i = 1,n1
      do j=1,np1
         pr1(i,j)=tl1(i,2*j-1)
@@ -150,10 +150,10 @@ program prsdiff
         dp=abs(p1(i,j)-p2(i,j))
         if (dp.gt.dp_max) dp_max=dp
         if(dp.gt.pdiff) then
-           if (nerr.eq.0) then
+           if (nerr.eq.0) then ! print table header on first error
               print'(/a)','   ix   iz    range    tl1    tl2 | diff'
               print*, repeat('-',33),'+',repeat('-',6)
-           end if
+           endif
            nerr=nerr+1
            write(*,'(2i5,f9.2, 4f9.5,a,f6.5)') i,j,r1(i), p1(i,j),p2(i,j),' | ',dp
         end if
@@ -161,4 +161,4 @@ program prsdiff
   enddo
   print '(/a,f6.5,a,i0)',' number of errors found (>',pdiff,'): ',nerr
   print '(a,f6.4)',' maximum error : ',dp_max
-end program readtest
+end program prsdiff
