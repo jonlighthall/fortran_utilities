@@ -184,4 +184,4 @@ program tsdiff
   if (nerr3.gt.0) then
      stop 1
   endif
-end program readtest
+end program tsdiff
