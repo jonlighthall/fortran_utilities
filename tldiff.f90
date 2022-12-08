@@ -7,7 +7,7 @@ program tldiff
   ! match. Next, the ranges are compared (first column). Each range value must
   ! match to withing the parameter rdiff. Then, the TL is compared, element by
   ! element and summary is printed. If any elements (less than the maximum TL
-  ! value) differ by more than the sum of the parameters tldiff and comp_diff,
+  ! value) differ by more than the sum of the parameters tl_diff and comp_diff,
   ! the program returns an error.
   !
   ! JCL Aug 2022
@@ -21,7 +21,7 @@ program tldiff
   ! ----------------------------------------------------------
   ! set thresholds
   real(kind=srk),parameter :: rdiff=0.01
-  real(kind=srk)::tldiff=0.01
+  real(kind=srk)::tl_diff=0.01
   real(kind=srk),parameter :: tl_red=0.1, comp_diff=0.001
   real(kind=srk),parameter :: tlmax=-20*log10(2.**(-23))
   ! ----------------------------------------------------------
@@ -42,7 +42,7 @@ program tldiff
   end if
 
   if (ln3.gt.0) then
-     read(tlthresh,*)tldiff
+     read(tlthresh,*)tl_diff
   end if
 
   !     open files
@@ -149,7 +149,7 @@ program tldiff
      do j=1,ns1
         dtl=abs(tl1(i,j)-tl2(i,j))
         if (dtl.gt.dtl_max) dtl_max=dtl
-        if(dtl.gt.tldiff) then
+        if(dtl.gt.tl_diff) then
            if (nerr.eq.0) then ! print table header on first error
               print'(/a)','   ix   iz    range    tl1    tl2 | diff'
               print*, repeat('-',33),'+',repeat('-',6)
@@ -182,8 +182,8 @@ program tldiff
         endif
      enddo
   enddo
-  print '(/a,f6.3,a,i0)',' number of errors found (>',tldiff,'): ',nerr
-  if(tl_red.ge.tldiff) then
+  print '(/a,f6.3,a,i0)',' number of errors found (>',tl_diff,'): ',nerr
+  if(tl_red.ge.tl_diff) then
      print '(a,f6.3,a,i0)',' number of errors found (>',tl_red+comp_diff,'): ',nerr2
      print '(a,f6.3,a,f5.1,a,i0)',' number of errors found (>',tl_red+comp_diff,' and tl < ',tlmax,'): ',nerr3
   endif
@@ -192,4 +192,4 @@ program tldiff
   if (nerr3.gt.0) then
      stop 1
   endif
-end program readtest
+end program tldiff
