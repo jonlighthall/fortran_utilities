@@ -1,4 +1,8 @@
-program readtest
+program cpddiff
+  ! cpd diff - calculate difference between two ducting probability files
+  !
+  ! JCL Aug 2022
+
   implicit none
   integer,parameter :: srk = selected_real_kind(2)
   real(kind=srk), dimension(:), allocatable :: r1,r2
