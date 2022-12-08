@@ -153,7 +153,7 @@ program cpddiff
      print *, 'length file 2 = ',n2
      close(unit1)
      close(unit2)
-     stop 'len'
+     stop 1
   endif
 
   if (ns1.eq.ns2) then
@@ -164,7 +164,7 @@ program cpddiff
      print *, 'delim file 2 = ',ns2
      close(unit1)
      close(unit2)
-     stop 'delim'
+     stop 1
   endif
 
   !     read file
@@ -186,7 +186,7 @@ program cpddiff
         print *, 'range ',i,' file 2 = ',i,r2(i)
         close(unit1)
         close(unit2)
-        stop 'range'
+        stop 1
      endif
   end do
   close(unit2)
