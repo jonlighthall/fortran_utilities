@@ -16,7 +16,10 @@ program readtest
   call get_command_argument(1,fname1,ln1)
   call get_command_argument(2,fname2,ln2)
   call get_command_argument(3,tlthresh,ln3)
-  print *,' tl max = ',tlmax
+100 format(a,f7.3)
+  print 100,' tl max = ',tlmax
+  print 100,' tl dif = ',tl_red
+  print 100,' tl com = ',comp_diff
 
   !     set file names
   if (ln1.eq.0) then
