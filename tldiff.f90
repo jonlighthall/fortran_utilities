@@ -1,4 +1,16 @@
-program readtest
+program tldiff
+  ! TL diff - calculate difference between two transmission loss files
+  !
+  ! The files are assumed to be formatted with range in the first column and TL
+  ! in the remaining columns. First, the dimensions of the two files are
+  ! compared. The number of lines and the number of columns (delimiters) must
+  ! match. Next, the ranges are compared (first column). Each range value must
+  ! match to withing the parameter rdiff. Then, the TL is compared, element by
+  ! element and summary is printed. If any elements (less than the maximum TL
+  ! value) differ by more than the sum of the parameters tldiff and comp_diff,
+  ! the program returns an error.
+  !
+  ! JCL Aug 2022
   implicit none
   integer,parameter :: srk = selected_real_kind(2)
   real(kind=srk), dimension(:), allocatable :: r1,r2
