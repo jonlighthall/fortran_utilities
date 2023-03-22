@@ -2,6 +2,7 @@
 echo $BASH_SOURCE
 TAB="   "
 
+# generate executables before linking
 make
 
 # set source and target directories
