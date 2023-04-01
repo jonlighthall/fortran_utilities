@@ -43,8 +43,8 @@ program cpddiff
   end if
 
   !     open files
-  open (newunit=unit1, file = fname1, status = 'old')
-  open (newunit=unit2, file = fname2, status = 'old')
+  open (getunit(unit1), file = fname1, status = 'old')
+  open (getunit(unit2), file = fname2, status = 'old')
 
   !     check file length
   n1=0  ! number of lines
