@@ -44,7 +44,7 @@ OBJS.all = $(OBJS.F77) $(OBJS.F90)
 # dependencies (non-executables)
 MODS. = 
 SUBS. = 
-FUNS. = 
+FUNS. = getunit
 DEPS. = $(MODS.) $(SUBS.) $(FUNS.)
 
 DEPS.o = $(addsuffix .o,$(DEPS.))
