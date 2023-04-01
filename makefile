@@ -7,7 +7,7 @@ output = -o $@
 includes = -I $(INCDIR) -J $(MODDIR)
 options = -std=f2008 -fimplicit-none
 options_new = -std=f2018
-options := $(options) $(options_new)
+#options := $(options) $(options_new)
 warnings = -Wall -Wsurprising -W -pedantic -Warray-temporaries	\
 -Wcharacter-truncation -Wimplicit-interface -Wintrinsics-std
 warnings_new = -Wconversion-extra -Wimplicit-procedure	\
