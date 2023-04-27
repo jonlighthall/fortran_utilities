@@ -25,7 +25,6 @@ program cpddiff
   real(kind=srk)::f1,f2
   integer,dimension(:),allocatable :: dp1,dp2,dp_check
   real,dimension(:),allocatable :: p_check
-      integer getunit
   integer :: ld,pln,fln,dln,wln,aln
   character fmt*64
   call get_command_argument(1,fname1,ln1)

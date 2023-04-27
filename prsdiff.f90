@@ -12,7 +12,6 @@ program prsdiff
   real(kind=srk), dimension(:), allocatable :: r1,r2
   real(kind=srk), dimension(:,:), allocatable :: pr1,pi1,tl1,tl2,pr2,pi2
   complex(kind=srk), dimension(:,:), allocatable :: p1,p2
-      integer getunit
   integer :: i,n1,io,ln1,ln2,unit1,unit2,n2,ln3,nerr,ns1,j,ls,ns2,np1
   character(len=256) :: fname1, fname2, tlthresh,dummy
   real(kind=srk)::dp_max,dp
