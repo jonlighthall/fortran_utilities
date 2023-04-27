@@ -5,12 +5,10 @@ FC = gfortran
 compile = -c $<
 output = -o $@
 includes = -I $(INCDIR) -J $(MODDIR)
-options = -std=f2018 -fimplicit-none
+options = -std=f2008 -fimplicit-none
 warnings = -Wall -Wsurprising -W -pedantic -Warray-temporaries	\
--Wcharacter-truncation -Wconversion-extra -Wimplicit-interface	\
--Wimplicit-procedure -Winteger-division -Wintrinsics-std	\
--Wreal-q-constant -Wuse-without-only -Wrealloc-lhs-all
-debug = -g -fbacktrace -fcheck=all			\
+-Wcharacter-truncation -Wimplicit-interface -Wintrinsics-std
+debug = -g -fbacktrace					\
 -ffpe-trap=invalid,zero,overflow,underflow,denormal
 #
 # fortran compiler flags
@@ -46,7 +44,7 @@ OBJS.all = $(OBJS.F77) $(OBJS.F90)
 # dependencies (non-executables)
 MODS. = 
 SUBS. = 
-FUNS. = 
+FUNS. = getunit
 DEPS. = $(MODS.) $(SUBS.) $(FUNS.)
 
 DEPS.o = $(addsuffix .o,$(DEPS.))

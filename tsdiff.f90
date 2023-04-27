@@ -1,4 +1,8 @@
-program readtest
+program tsdiff
+  ! ts diff - calculate difference between two time series files
+  !
+  ! JCL Aug 2022
+
   implicit none
   interface
      integer function getunit(unit)
@@ -8,18 +12,24 @@ program readtest
   integer,parameter :: srk = selected_real_kind(2)
   real(kind=srk), dimension(:), allocatable :: r1,r2
   real(kind=srk), dimension(:,:), allocatable :: tl1,tl2
+      integer getunit
   integer :: i,n1,io,ln1,ln2,unit1,unit2,n2,ln3,nerr,ns1,j,ls,ns2,nerr2,nerr3
   character(len=256) :: fname1, fname2, tlthresh,dummy
   real(kind=srk)::dtl,dtl_max
+  ! ----------------------------------------------------------
   ! set thresholds
   real(kind=srk),parameter :: rdiff=0.01
   real(kind=srk)::tldiff=0.01
   real(kind=srk),parameter :: tl_red=0.1, comp_diff=0.001
   real(kind=srk),parameter :: tlmax=-20*log10(2.**(-23))
+  ! ----------------------------------------------------------
   call get_command_argument(1,fname1,ln1)
   call get_command_argument(2,fname2,ln2)
   call get_command_argument(3,tlthresh,ln3)
-  print *,' tl max = ',tlmax
+100 format(a,f7.3)
+  print 100,' tl max = ',tlmax
+  print 100,' tl dif = ',tl_red
+  print 100,' tl com = ',comp_diff
 
   !     set file names
   if (ln1.eq.0) then
@@ -84,25 +94,25 @@ program readtest
   enddo
 
   if (n1.eq.n2) then
-     print *, 'file lengths match'
+     print *, 'file lengths match: ',n1
   else
      print *, 'file lengths do not match'
      print *, 'length file 1 = ',n1
      print *, 'length file 2 = ',n2
      close(unit1)
      close(unit2)
-     stop 'len'
+     stop 1
   endif
 
   if (ns1.eq.ns2) then
-     print *, 'file delimiters match'
+     print *, 'number of file delimiters match: ',ns1
   else
-     print *, 'file delimiters do not match'
+     print *, 'number of file delimiters do not match'
      print *, 'delim file 1 = ',ns1
      print *, 'delim file 2 = ',ns2
      close(unit1)
      close(unit2)
-     stop 'delim'
+     stop 1
   endif
 
   !     read file
@@ -122,7 +132,7 @@ program readtest
         print *, 'range ',i,' file 2 = ',i,r2(i)
         close(unit1)
         close(unit2)
-        stop 'range'
+        stop 1
      endif
   end do
   close(unit2)
@@ -138,10 +148,10 @@ program readtest
         dtl=abs(tl1(i,j)-tl2(i,j))
         if (dtl.gt.dtl_max) dtl_max=dtl
         if(dtl.gt.tldiff) then
-           if (nerr.eq.0) then
+           if (nerr.eq.0) then ! print table header on first error
               print'(/a)','   ix   iz    range    tl1    tl2      | diff'
               print*, repeat('-',37),'+',repeat('-',6)
-           end if
+           endif
            nerr=nerr+1
            write(*,'(2i5,f9.2)',advance='no') i,j,r1(i)
 
@@ -167,9 +177,8 @@ program readtest
            if((tl1(i,j).lt.tlmax).and.(tl2(i,j).lt.tlmax).and.(dtl.gt.(tl_red+comp_diff)))then
               nerr3=nerr3+1
            endif
-
-        end if
-     end do
+        endif
+     enddo
   enddo
   print '(/a,f8.5,a,i0)',' number of errors found (>',tldiff,'): ',nerr
   if(tl_red.ge.tldiff) then
@@ -181,4 +190,4 @@ program readtest
   if (nerr3.gt.0) then
      stop 1
   endif
-end program readtest
+end program tsdiff

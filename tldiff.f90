@@ -1,4 +1,16 @@
-program readtest
+program tldiff
+  ! TL diff - calculate difference between two transmission loss files
+  !
+  ! The files are assumed to be formatted with range in the first column and TL
+  ! in the remaining columns. First, the dimensions of the two files are
+  ! compared. The number of lines and the number of columns (delimiters) must
+  ! match. Next, the ranges are compared (first column). Each range value must
+  ! match to withing the parameter rdiff. Then, the TL is compared, element by
+  ! element and summary is printed. If any elements (less than the maximum TL
+  ! value) differ by more than the sum of the parameters tl_diff and comp_diff,
+  ! the program returns an error.
+  !
+  ! JCL Aug 2022
   implicit none
   interface
      integer function getunit(unit)
@@ -8,20 +20,24 @@ program readtest
   integer,parameter :: srk = selected_real_kind(2)
   real(kind=srk), dimension(:), allocatable :: r1,r2
   real(kind=srk), dimension(:,:), allocatable :: tl1,tl2
+      integer getunit
   integer :: i,n1,io,ln1,ln2,unit1,unit2,n2,ln3,nerr,ns1,j,ls,ns2,nerr2,nerr3
   character(len=256) :: fname1, fname2, tlthresh,dummy
   real(kind=srk)::dtl,dtl_max
   ! ----------------------------------------------------------
   ! set thresholds
   real(kind=srk),parameter :: rdiff=0.01
-  real(kind=srk)::tldiff=0.01
+  real(kind=srk)::tl_diff=0.01
   real(kind=srk),parameter :: tl_red=0.1, comp_diff=0.001
   real(kind=srk),parameter :: tlmax=-20*log10(2.**(-23))
   ! ----------------------------------------------------------
   call get_command_argument(1,fname1,ln1)
   call get_command_argument(2,fname2,ln2)
   call get_command_argument(3,tlthresh,ln3)
-  print *,' tl max = ',tlmax
+100 format(a,f7.3)
+  print 100,' tl max = ',tlmax
+  print 100,' tl dif = ',tl_red
+  print 100,' tl com = ',comp_diff
 
   !     set file names
   if (ln1.eq.0) then
@@ -32,7 +48,7 @@ program readtest
   end if
 
   if (ln3.gt.0) then
-     read(tlthresh,*)tldiff
+     read(tlthresh,*)tl_diff
   end if
 
   !     open files
@@ -93,7 +109,7 @@ program readtest
      print *, 'length file 2 = ',n2
      close(unit1)
      close(unit2)
-     stop 'len'
+     stop 1
   endif
 
   if (ns1.eq.ns2) then
@@ -104,7 +120,7 @@ program readtest
      print *, 'delim file 2 = ',ns2
      close(unit1)
      close(unit2)
-     stop 'delim'
+     stop 1
   endif
 
   !     read file
@@ -124,7 +140,7 @@ program readtest
         print *, 'range ',i,' file 2 = ',i,r2(i)
         close(unit1)
         close(unit2)
-        stop 'range'
+        stop 1
      endif
   end do
   close(unit2)
@@ -139,7 +155,7 @@ program readtest
      do j=1,ns1
         dtl=abs(tl1(i,j)-tl2(i,j))
         if (dtl.gt.dtl_max) dtl_max=dtl
-        if(dtl.gt.tldiff) then
+        if(dtl.gt.tl_diff) then
            if (nerr.eq.0) then ! print table header on first error
               print'(/a)','   ix   iz    range    tl1    tl2 | diff'
               print*, repeat('-',33),'+',repeat('-',6)
@@ -172,8 +188,8 @@ program readtest
         endif
      enddo
   enddo
-  print '(/a,f6.3,a,i0)',' number of errors found (>',tldiff,'): ',nerr
-  if(tl_red.ge.tldiff) then
+  print '(/a,f6.3,a,i0)',' number of errors found (>',tl_diff,'): ',nerr
+  if(tl_red.ge.tl_diff) then
      print '(a,f6.3,a,i0)',' number of errors found (>',tl_red+comp_diff,'): ',nerr2
      print '(a,f6.3,a,f5.1,a,i0)',' number of errors found (>',tl_red+comp_diff,' and tl < ',tlmax,'): ',nerr3
   endif
@@ -182,4 +198,4 @@ program readtest
   if (nerr3.gt.0) then
      stop 1
   endif
-end program readtest
+end program tldiff

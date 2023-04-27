@@ -1,4 +1,7 @@
-program readtest
+program cpddiff
+  ! cpd diff - calculate difference between two ducting probability files
+  !
+  ! JCL Aug 2022
   implicit none
   interface
      integer function getunit(unit)
@@ -14,7 +17,7 @@ program readtest
   ! ----------------------------------------------------------
   ! set thresholds
   real(kind=srk),parameter :: rdiff=0.01
-  real(kind=srk)::tldiff=0.001
+  real(kind=srk)::tl_diff=0.001
   real(kind=srk),parameter :: tl_red=0.01, comp_diff=0.001
   real(kind=srk),parameter :: tlmax=-20*log10(2.**(-23))
   ! ----------------------------------------------------------
@@ -22,12 +25,16 @@ program readtest
   real(kind=srk)::f1,f2
   integer,dimension(:),allocatable :: dp1,dp2,dp_check
   real,dimension(:),allocatable :: p_check
+      integer getunit
   integer :: ld,pln,fln,dln,wln,aln
   character fmt*64
   call get_command_argument(1,fname1,ln1)
   call get_command_argument(2,fname2,ln2)
   call get_command_argument(3,tlthresh,ln3)
-  print *,' tl max = ',tlmax
+100 format(a,f7.3)
+  print 100,' tl max = ',tlmax
+  print 100,' tl dif = ',tl_red
+  print 100,' tl com = ',comp_diff
 
   !     set file names
   if (ln1.eq.0) then
@@ -38,7 +45,7 @@ program readtest
   end if
 
   if (ln3.gt.0) then
-     read(tlthresh,*)tldiff
+     read(tlthresh,*)tl_diff
   end if
 
   !     open files
@@ -51,14 +58,11 @@ program readtest
   ls=0  ! position of last space
   do
      if (n1.eq.0) then
-        read(unit1,*) nm1,f1
+        read(unit1,*) nm1,f1 ! read header line
         print '(a)', 'header line:'
         print '(a,i0)',' nm1 = ',nm1
         print '(a,f7.1)','  f1 = ',f1
-
         read(unit1,'(a)',iostat=io) dummy
-        print *,'first line'
-        print *,dummy
         do j=1,len(trim(dummy))
            if(dummy(j:j) == ' ') then
               if (j.eq.(ls+1)) then ! same space
@@ -68,7 +72,6 @@ program readtest
               ls =j
            endif
         enddo
-
         ! check precision
         allocate(dp1(ns1+1))
         i=0
@@ -93,7 +96,7 @@ program readtest
      n1=n1+1
   enddo
   print '(2a,i5,a,i3,a)',trim(fname1),' has ',n1,' lines and ',ns1,' delimiters'
-
+  ! compare dimensions with header
   if (n1.eq.nm1) then
      print *, 'number of lines matches number of environments: ',n1
   else
@@ -110,12 +113,11 @@ program readtest
   ls=0
   do
      if (n2.eq.0) then
-        read(unit2,*) nm2,f2
+        read(unit2,*) nm2,f2 ! read header line
         print *,'nm2 = ',nm2
         print *,'f2 = ',f2
 
         read(unit2,'(a)',iostat=io) dummy
-        print *,dummy
         do j=1,len(trim(dummy))
            if(dummy(j:j) == ' ') then
               if (j.eq.(ls+1)) then
@@ -157,7 +159,7 @@ program readtest
      print *, 'length file 2 = ',n2
      close(unit1)
      close(unit2)
-     stop 'len'
+     stop 1
   endif
 
   if (ns1.eq.ns2) then
@@ -168,7 +170,7 @@ program readtest
      print *, 'delim file 2 = ',ns2
      close(unit1)
      close(unit2)
-     stop 'delim'
+     stop 1
   endif
 
   !     read file
@@ -190,7 +192,7 @@ program readtest
         print *, 'range ',i,' file 2 = ',i,r2(i)
         close(unit1)
         close(unit2)
-        stop 'range'
+        stop 1
      endif
   end do
   close(unit2)
@@ -215,8 +217,8 @@ program readtest
      do j=1,ns1
         dtl=abs(tl1(i,j)-tl2(i,j))
 
-        tldiff=p_check(j+1)/2
-        if(dtl-tldiff.gt.epsilon(dtl)) then
+        tl_diff=p_check(j+1)/2
+        if(dtl-tl_diff.gt.epsilon(dtl)) then
                    if (dtl.gt.dtl_max) dtl_max=dtl
            if (nerr.eq.0) then ! print table header on first error
               print'(/a)','   ix   iz    range   tl1          tl2        |  diff        thresh'
@@ -236,7 +238,7 @@ program readtest
            write(*,'(a)',advance='no') ' | '
            write(*,fmt,advance='no') dtl
 
-           write(*,fmt) tldiff
+           write(*,fmt) tl_diff
 
            if((tl1(i,j).lt.tlmax).and.(tl2(i,j).lt.tlmax).and.(dtl.gt.(tl_red+comp_diff)))then
               nerr3=nerr3+1
@@ -244,8 +246,8 @@ program readtest
         endif
      enddo
   enddo
-  print '(/a,f6.3,a,i0)',' number of errors found (>',tldiff,'): ',nerr
-  if(tl_red.ge.tldiff) then
+  print '(/a,f6.3,a,i0)',' number of errors found (>',tl_diff,'): ',nerr
+  if(tl_red.ge.tl_diff) then
      print '(a,f6.3,a,i0)',' number of errors found (>',tl_red+comp_diff,'): ',nerr2
      print '(a,f6.3,a,f5.1,a,i0)',' number of errors found (>',tl_red+comp_diff,' and tl < ',tlmax,'): ',nerr3
   endif
@@ -254,4 +256,4 @@ program readtest
   if (nerr3.gt.0) then
      stop 1
   endif
-end program readtest
+end program cpddiff
