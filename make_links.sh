@@ -21,7 +21,7 @@ echo -n "source directory ${source_dir}... "
 if [ -d "$source_dir" ]; then
     echo "exists"
 else
-    echo -e "${BAD}does not exist${NORMAL}"
+    echo "does not exist"
     exit 1
 fi
 
@@ -78,7 +78,7 @@ do
 	echo "${TAB}making link... "
 	ln -sv "${target}" ${link} | sed "s/^/${TAB}/"
         else
-            echo -e "not executable"
+            echo "not executable"
         fi
     else
 	echo "does not exist"
