@@ -1,7 +1,7 @@
 program tsdiff
   ! ts diff - calculate difference between two time series files
   !
-  ! JCL Aug 2022
+  ! Aug 2022 JCL
   implicit none
   integer,parameter :: srk = selected_real_kind(2)
   real(kind=srk), dimension(:), allocatable :: r1,r2
