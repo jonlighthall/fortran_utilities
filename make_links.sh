@@ -1,78 +1,98 @@
 #!/bin/bash
-echo $BASH_SOURCE
-TAB="   "
+
+# load formatting
+fpretty=${HOME}/utils/bash/.bashrc_pretty
+if [ -e $fpretty ]; then
+    source $fpretty
+fi
+
+# print source name at start
+echo "${TAB}running $BASH_SOURCE..."
+src_name=$(readlink -f $BASH_SOURCE)
+if [ ! "$BASH_SOURCE" = "$src_name" ]; then
+    echo -e "${TAB}${VALID}link${NORMAL} -> $src_name"
+fi
 
 # generate executables before linking
 make
 
 # set source and target directories
-BASH_DIR="$( cd "$( dirname "$0" )" && pwd )"
-source_dir=${BASH_DIR}/bin
-user_bin=$HOME/bin
+source_dir=$(dirname "$src_name")/bin
+target_dir=$HOME/bin
 
 # check directories
-echo "source directory $source_dir..."
-if [ -d $source_dir ]; then
+echo -n "source directory ${source_dir}... "
+if [ -d "$source_dir" ]; then
+    echo "exists"
+else
+    echo -e "${BAD}does not exist${NORMAL}"
+    exit 1
+fi
+
+echo -n "target directory ${target_dir}... "
+if [ -d $target_dir ]; then
     echo "exists"
 else
     echo "does not exist"
-    return 1
+    mkdir -pv $target_dir
 fi
 
-echo -n "target directory $user_bin... "
-if [ -d $user_bin ]; then
-    echo "exists"
-else
-    echo "does not exist"
-    mkdir -pv $user_bin
-fi
+bar 38 "------ Start Linking Repo Files-------"
 
-echo "--------------------------------------"
-echo "------ Start Linking Repo Files-------"
-echo "--------------------------------------"
-
-# list files to be linked
+# list of files to be linked
 ext=.exe
-for prog in cpddiff \
+for my_link in cpddiff \
 		prsdiff \
 		tldiff \
 		tsdiff
 do
-    target=${source_dir}/${prog}${ext}
-    link=${user_bin}/${prog}
+    target=${source_dir}/${my_link}${ext}
+    link=${target_dir}/${my_link}
 
-    echo -n "program $target... "
-    if [ -e $target ]; then
+    echo -n "source file ${target}... "
+    if [ -e "${target}" ]; then
 	echo -n "exists and is "
-	if [ -x $target ]; then
+	if [ -x "${target}" ]; then
 	    echo "executable"
-	    echo -n "${TAB}link $link... "
-	    # first, backup existing copy
-	    if [ -L $link ] || [ -f $link ] || [ -d $link ]; then
-		echo -n "exists and "
-		if [[ $target -ef $link ]]; then
-		    echo "already points to ${prog}"
-		    echo -n "${TAB}"
-		    ls -lhG --color=auto $link
-		    echo "${TAB}skipping..."
+	echo -n "${TAB}link ${link}... "
+	# first, backup existing copy
+	if [ -L ${link} ] || [ -f ${link} ] || [ -d ${link} ]; then
+	    echo -n "exists and "
+	    if [[ "${target}" -ef ${link} ]]; then
+                echo "already points to ${my_link}"
+		echo -n "${TAB}"
+		ls -lhG --color=auto ${link}
+		echo "${TAB}skipping..."
+		continue
+	    else
+		if [ $(diff "${target}" ${link} | wc -c) -eq 0 ]; then
+		    echo "have the same contents"
 		    continue
 		else
 		    echo -n "will be backed up..."
-		    mv -v $link ${link}_$(date +'%Y-%m-%d-t%H%M')
+		    mv -v ${link} ${link}_$(date -r ${link} +'%Y-%m-%d-t%H%M')
 		fi
-	    else
-		echo "does not exist"
 	    fi
-	    # then link
-	    echo -n "${TAB}making link... "
-	    ln -sv $target $link
 	else
-	    echo "not executable"
+	    echo "does not exist"
 	fi
+        # then link
+	echo -en "${TAB}${GRH}";hline 72;
+	echo "${TAB}making link... "
+	ln -sv "${target}" ${link} | sed "s/^/${TAB}/"
+	echo -ne "${TAB}";hline 72;echo -en "${NORMAL}"
+        else
+            echo -e "${BAD}not executable${NORMAL}"
+        fi
     else
-	echo "does not exist"
+        echo -e "${BAD}does not exist${NORMAL}"
     fi
 done
-echo "--------------------------------------"
-echo "--------- Done Making Links ----------"
-echo "--------------------------------------"
+bar 38 "--------- Done Making Links ----------"
+# print time at exit
+echo -en "$(date +"%a %b %-d %I:%M %p %Z") ${BASH_SOURCE##*/} "
+if command -v sec2elap &>/dev/null; then
+    echo "$(sec2elap $SECONDS)"
+else
+    echo "elapsed time is ${SECONDS} sec"
+fi
