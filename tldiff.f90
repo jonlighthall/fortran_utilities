@@ -10,7 +10,7 @@ program tldiff
   ! value) differ by more than the sum of the parameters tl_diff and comp_diff,
   ! the program returns an error.
   !
-  ! JCL Aug 2022
+  ! Aug 2022 JCL
   implicit none
   interface
      integer function getunit(unit)
