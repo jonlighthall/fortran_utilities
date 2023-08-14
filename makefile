@@ -1,28 +1,33 @@
+THISDIR=$(shell \pwd | sed 's%^.*/%%')
+
 # fortran compiler
 FC = gfortran
 #
 # general flags
 compile = -c $<
 output = -o $@
-includes = -I $(INCDIR) -J $(MODDIR)
+#
+# options
 options = -std=f2008 -fimplicit-none
+warnings = -Wall -Wsurprising -W -pedantic -Warray-temporaries -Wcharacter-truncation \
+-Wimplicit-interface -Wintrinsics-std
+debug = -g -fbacktrace -ffpe-trap=invalid,zero,overflow,underflow,denormal
+#
+# additional options for gfortran v4.5 and later
 options_new = -std=f2018
-options := $(options) $(options_new)
-warnings = -Wall -Wsurprising -W -pedantic -Warray-temporaries	\
--Wcharacter-truncation -Wimplicit-interface -Wintrinsics-std
-warnings_new = -Wconversion-extra -Wimplicit-procedure	\
--Winteger-division -Wreal-q-constant -Wuse-without-only	\
--Wrealloc-lhs-all
-warnings := $(warnings) $(warnings_new)
-debug = -g -fbacktrace					\
--ffpe-trap=invalid,zero,overflow,underflow,denormal
+warnings_new = -Wconversion-extra -Wimplicit-procedure -Winteger-division -Wreal-q-constant \
+-Wuse-without-only -Wrealloc-lhs-all
 debug_new = -fcheck=all
+#
+# concatenate options
+options := $(options) $(options_new)
+warnings := $(warnings) $(warnings_new)
 debug:= $(debug) $(debug_new)
 #
 # fortran compiler flags
-FCFLAGS = $(options) $(warnings) $(debug)
+FCFLAGS = $(includes) $(options) $(warnings) $(debug)
 F77.FLAGS = -fd-lines-as-comments
-F90.FLAGS = 
+F90.FLAGS =
 FC.COMPILE = $(FC) $(FCFLAGS) $(compile)
 FC.COMPILE.o = $(FC.COMPILE)  $(output) $(F77.FLAGS)
 FC.COMPILE.o.f90 = $(FC.COMPILE) $(output) $(F90.FLAGS)
@@ -33,11 +38,16 @@ FLFLAGS = $(output) $^
 FC.LINK = $(FC) $(FLFLAGS)
 #
 # define subdirectories
+BINDIR := bin
 OBJDIR := obj
 MODDIR := mod
-BINDIR := bin
 INCDIR := inc
-VPATH = $(INCDIR)
+
+# add INCDIR if present
+ifneq ("$(strip $(wildcard $(INCDIR)))","")
+	VPATH = $(INCDIR)
+	includes = -I $(INCDIR)
+endif
 #
 # source files
 SRC.F77 = $(wildcard *.f)
@@ -50,10 +60,15 @@ OBJS.F90 = $(SRC.F90:.f90=.o)
 OBJS.all = $(OBJS.F77) $(OBJS.F90)
 #
 # dependencies (non-executables)
-MODS. = 
-SUBS. = 
-FUNS. = 
+MODS. =
+SUBS. =
+FUNS. =
 DEPS. = $(MODS.) $(SUBS.) $(FUNS.)
+
+# add MODDIR to includes if MODS. not empty
+ifneq ("$(strip $(wildcard $(MODS.)))","")
+	includes:=$(includes) -J $(MODDIR)
+endif
 
 DEPS.o = $(addsuffix .o,$(DEPS.))
 OBJS.o = $(filter-out $(DEPS.o),$(OBJS.all))
@@ -65,17 +80,30 @@ MODS := $(addprefix $(MODDIR)/,$(MODS.mod))
 #
 # executables
 EXES = $(addprefix $(BINDIR)/,$(OBJS.o:.o=.exe))
-
+#
+# recipes
 all: $(EXES) $(OBJS) $(DEPS) $(MODS)
-	@echo "$@ done"
+	@echo "$(THISDIR) $@ done"
 printvars:
-	@echo $@:
+	@echo
+	@echo "printing variables..."
+	@echo "----------------------------------------------------"
+	@echo
+	@echo "includes = '$(includes)'"
+
+	@echo
+	@echo "----------------------------------------------------"
+	@echo
+
+	@echo "SRC.F77 = $(SRC.F77)"
+	@echo
+	@echo "SRC.F90 = $(SRC.F90)"
 	@echo
 	@echo "SRC = $(SRC)"
 	@echo
 	@echo "OBJS.all = $(OBJS.all)"
 
-	@echo	
+	@echo
 	@echo "----------------------------------------------------"
 	@echo
 
@@ -109,66 +137,88 @@ printvars:
 	@echo
 	@echo "MODS = $(MODS)"
 	@echo
-
+	@echo "----------------------------------------------------"
 	@echo "$@ done"
+	@echo
 #
-# generic recipies
+# specific recipes
+
+#
+# generic recipes
 $(BINDIR)/%.exe: $(OBJDIR)/%.o $(DEPS) | $(BINDIR)
-	@echo -e "\nlinking generic executable $@..."
-	$(FC.LINK)	
+	@echo "\nlinking generic executable $@..."
+	$(FC.LINK)
 $(OBJDIR)/%.o: %.f $(MODS) | $(OBJDIR)
-	@echo -e "\ncompiling generic object $@..."
+	@echo "\ncompiling generic object $@..."
 	$(FC.COMPILE.o)
 $(OBJDIR)/%.o: %.f90 $(MODS) | $(OBJDIR)
-	@echo -e "\ncompiling generic f90 object $@..."
+	@echo "\ncompiling generic f90 object $@..."
 	$(FC.COMPILE.o.f90)
 $(MODDIR)/%.mod: %.f | $(OBJDIR) $(MODDIR)
-	@echo -e "\ncompiling generic module $@..."
+	@echo "\ncompiling generic module $@..."
 	$(FC.COMPILE.mod)
 $(MODDIR)/%.mod: %.f90 | $(OBJDIR) $(MODDIR)
-	@echo -e "\ncompiling generic f90 module $@..."
+	@echo "\ncompiling generic f90 module $@..."
 	$(FC.COMPILE.mod)
 #
 # define directory creation
-$(OBJDIR):
-	@mkdir -v $(OBJDIR)
 $(BINDIR):
 	@mkdir -v $(BINDIR)
+$(OBJDIR):
+	@mkdir -v $(OBJDIR)
 $(MODDIR):
+ifeq ("$(wildcard $(MODS))",)
+	@echo "no modules specified"
+else
+	@echo "creating $(MODDIR)..."
 	@mkdir -v $(MODDIR)
+endif
+
 # keep intermediate object files
 .SECONDARY: $(OBJS) $(MODS)
 #
 # recipes without outputs
-.PHONY: clean out distclean
+.PHONY: mostlyclean clean out realclean distclean
 #
-# clean up routines
-CMD = @rm -vfrd
-clean:
-	@echo removing files...
+# clean up
+RM = @rm -vfrd
+mostlyclean:
 # remove compiled binaries
-	$(CMD) $(TARGET)
-	$(CMD) $(OBJDIR)/*.o
-	$(CMD) $(OBJDIR)
-	$(CMD) *.o *.obj
-	$(CMD) $(MODDIR)/*.mod
-	$(CMD) $(MODDIR)
-	$(CMD) *.mod
-	$(CMD) $(BINDIR)/*.exe
-	$(CMD) $(BINDIR)
-	$(CMD) *.exe
-	$(CMD) *.out
-	$(CMD) fort.*
-	@echo "$@ done"
+	@echo "removing compiled binary files..."
+	$(RM) $(OBJDIR)/*.o
+	$(RM) $(OBJDIR)
+	$(RM) *.o *.obj
+	$(RM) $(MODDIR)/*.mod
+	$(RM) $(MODDIR)
+	$(RM) *.mod
+	$(RM) fort.*
+	@echo "$(THISDIR) $@ done"
+clean: mostlyclean
+# remove binaries and executables
+	@echo "\nremoving compiled executable files..."
+	$(RM) $(BINDIR)/*.exe
+	$(RM) $(BINDIR)
+	$(RM) *.exe
+	$(RM) *.out
+	@echo "$(THISDIR) $@ done"
 out:
 # remove outputs produced by executables
-	@echo "$@ done"
-distclean: clean out
+	@echo "\nremoving output files..."
+	@echo "$(THISDIR) $@ done"
+realclean: clean out
+# remove binaries and outputs
+#	@echo "\nremoving binary and output files..."
+#	@echo "$(THISDIR) $@ done"
+distclean: realclean
+# remove binaries, outputs, and backups
+	@echo "\nremoving backup files..."
 # remove Git versions
-	$(CMD) *.~*~
+	$(RM) *.~*~
 # remove Emacs backup files
-	$(CMD) *~ \#*\#
-	@echo "$@ done"
+	$(RM) *~ \#*\#
+	@echo "$(THISDIR) $@ done"
+#
+# test
 test: distclean printvars all
 # test the makefile
-	@echo "$@ done"
+	@echo "$(THISDIR) $@ done"
