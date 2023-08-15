@@ -8,7 +8,7 @@ compile = -c $<
 output = -o $@
 #
 # options
-options = -std=f2008 -fimplicit-none
+options = -fimplicit-none -std=f2008
 warnings = -Wall -Wsurprising -W -pedantic -Warray-temporaries -Wcharacter-truncation	\
 -Wimplicit-interface -Wintrinsics-std
 debug = -g -fbacktrace -ffpe-trap=invalid,zero,overflow,underflow,denormal
@@ -220,6 +220,7 @@ clean: mostlyclean
 out:
 # remove outputs produced by executables
 	@echo "\nremoving output files..."
+
 	@$(optSUBDIRS)
 	@echo "$(THISDIR) $@ done"
 realclean: clean out
