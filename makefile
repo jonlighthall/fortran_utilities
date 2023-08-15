@@ -9,13 +9,13 @@ output = -o $@
 #
 # options
 options = -std=f2008 -fimplicit-none
-warnings = -Wall -Wsurprising -W -pedantic -Warray-temporaries -Wcharacter-truncation \
+warnings = -Wall -Wsurprising -W -pedantic -Warray-temporaries -Wcharacter-truncation	\
 -Wimplicit-interface -Wintrinsics-std
 debug = -g -fbacktrace -ffpe-trap=invalid,zero,overflow,underflow,denormal
 #
 # additional options for gfortran v4.5 and later
 options_new = -std=f2018
-warnings_new = -Wconversion-extra -Wimplicit-procedure -Winteger-division -Wreal-q-constant \
+warnings_new = -Wconversion-extra -Wimplicit-procedure -Winteger-division -Wreal-q-constant	\
 -Wuse-without-only -Wrealloc-lhs-all
 debug_new = -fcheck=all
 #
@@ -45,8 +45,8 @@ INCDIR := inc
 
 # add INCDIR if present
 ifneq ("$(strip $(wildcard $(INCDIR)))","")
-	VPATH = $(INCDIR)
-	includes = -I $(INCDIR)
+	VPATH = $(subst $(subst ,, ),:,$(strip $(INCDIR)))
+	includes = $(patsubst %,-I %,$(INCDIR))
 endif
 #
 # source files
@@ -66,7 +66,7 @@ FUNS. =
 DEPS. = $(MODS.) $(SUBS.) $(FUNS.)
 
 # add MODDIR to includes if MODS. not empty
-ifneq ("$(strip $(wildcard $(MODS.)))","")
+ifneq ("$(MODS.)","")
 	includes:=$(includes) -J $(MODDIR)
 endif
 
@@ -81,15 +81,28 @@ MODS := $(addprefix $(MODDIR)/,$(MODS.mod))
 # executables
 EXES = $(addprefix $(BINDIR)/,$(OBJS.o:.o=.exe))
 #
+# sub-programs
+SUBDIRS :=
+#
 # recipes
-all: $(EXES) $(OBJS) $(DEPS) $(MODS)
-	@echo "$(THISDIR) $@ done"
+all: $(EXES) $(SUBDIRS)
+	@echo "\n$(THISDIR) $@ done"
+$(SUBDIRS):
+	@$(MAKE) --no-print-directory -C $@
 printvars:
 	@echo
 	@echo "printing variables..."
 	@echo "----------------------------------------------------"
 	@echo
 	@echo "includes = '$(includes)'"
+	@echo "VPATH = '$(VPATH)'"
+
+	@echo
+	@echo "----------------------------------------------------"
+	@echo
+
+
+	@echo "SUBDIRS = $(SUBDIRS)"
 
 	@echo
 	@echo "----------------------------------------------------"
@@ -154,10 +167,10 @@ $(OBJDIR)/%.o: %.f $(MODS) | $(OBJDIR)
 $(OBJDIR)/%.o: %.f90 $(MODS) | $(OBJDIR)
 	@echo "\ncompiling generic f90 object $@..."
 	$(FC.COMPILE.o.f90)
-$(MODDIR)/%.mod: %.f | $(OBJDIR) $(MODDIR)
+$(MODDIR)/%.mod: %.f | $(MODDIR)
 	@echo "\ncompiling generic module $@..."
 	$(FC.COMPILE.mod)
-$(MODDIR)/%.mod: %.f90 | $(OBJDIR) $(MODDIR)
+$(MODDIR)/%.mod: %.f90 | $(MODDIR)
 	@echo "\ncompiling generic f90 module $@..."
 	$(FC.COMPILE.mod)
 #
@@ -175,12 +188,13 @@ else
 endif
 
 # keep intermediate object files
-.SECONDARY: $(OBJS) $(MODS)
+.SECONDARY: $(DEPS) $(OBJS) $(MODS)
 #
 # recipes without outputs
-.PHONY: mostlyclean clean out realclean distclean
+.PHONY: all $(SUBDIRS) mostlyclean clean out realclean distclean
 #
 # clean up
+optSUBDIRS = $(addprefix $(MAKE) $@ --no-print-directory -C ,$(addsuffix ;,$(SUBDIRS)))
 RM = @rm -vfrd
 mostlyclean:
 # remove compiled binaries
@@ -192,6 +206,7 @@ mostlyclean:
 	$(RM) $(MODDIR)
 	$(RM) *.mod
 	$(RM) fort.*
+	@$(optSUBDIRS)
 	@echo "$(THISDIR) $@ done"
 clean: mostlyclean
 # remove binaries and executables
@@ -200,15 +215,16 @@ clean: mostlyclean
 	$(RM) $(BINDIR)
 	$(RM) *.exe
 	$(RM) *.out
+	@$(optSUBDIRS)
 	@echo "$(THISDIR) $@ done"
 out:
 # remove outputs produced by executables
 	@echo "\nremoving output files..."
+	@$(optSUBDIRS)
 	@echo "$(THISDIR) $@ done"
 realclean: clean out
 # remove binaries and outputs
-#	@echo "\nremoving binary and output files..."
-#	@echo "$(THISDIR) $@ done"
+	@$(optSUBDIRS)
 distclean: realclean
 # remove binaries, outputs, and backups
 	@echo "\nremoving backup files..."
@@ -216,6 +232,8 @@ distclean: realclean
 	$(RM) *.~*~
 # remove Emacs backup files
 	$(RM) *~ \#*\#
+# clean sub-programs
+	@$(optSUBDIRS)
 	@echo "$(THISDIR) $@ done"
 #
 # test
