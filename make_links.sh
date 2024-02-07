@@ -51,11 +51,16 @@ do
 
     echo -n "source file ${target}... "
     if [ -e "${target}" ]; then
-		echo -n "exists and is "
+		echo -n "exists and "
 		permOK=500
 		perm=$(stat -c "%a" "${target}")
-		if [ -x "${target}" ] || [[ ${perm} -ge ${permOK} ]] ; then
-			echo "executable"
+		if [[ ${perm} -ge ${permOK} ]]; then
+			if [ -x "${target}" ]; then
+				echo -n "is"
+			else
+				echo -n "should be"
+			fi
+			echo " executable"
 			echo -n "${TAB}link ${link}... "
 			# first, backup existing copy
 			if [ -L ${link} ] || [ -f ${link} ] || [ -d ${link} ]; then
