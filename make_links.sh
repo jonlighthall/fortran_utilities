@@ -1,14 +1,22 @@
-#!/bin/bash
+#!/bin/bash -u
 
 # load formatting
-fpretty=${HOME}/utils/bash/.bashrc_pretty
-if [ -e $fpretty ]; then
-    source $fpretty
+fpretty="${HOME}/utils/bash/.bashrc_pretty"
+if [ -e "$fpretty" ]; then
+    source "$fpretty"
 fi
 
+# determine if script is being sourced or executed
+if (return 0 2>/dev/null); then
+    RUN_TYPE="sourcing"
+else
+	RUN_TYPE="executing"
+	# exit on errors
+	set -e
+fi
 # print source name at start
-echo "${TAB}running $BASH_SOURCE..."
-src_name=$(readlink -f $BASH_SOURCE)
+echo -e "${TAB}${RUN_TYPE} ${PSDIR}$BASH_SOURCE${NORMAL}..."
+src_name=$(readlink -f "$BASH_SOURCE")
 if [ ! "$BASH_SOURCE" = "$src_name" ]; then
     echo -e "${TAB}${VALID}link${NORMAL} -> $src_name"
 fi
@@ -17,24 +25,24 @@ fi
 make
 
 # set source and target directories
-source_dir=$(dirname "$src_name")/bin
-target_dir=$HOME/bin
+target_dir=$(dirname "$src_name")/bin
+link_dir=$HOME/bin
 
 # check directories
-echo -n "source directory ${source_dir}... "
-if [ -d "$source_dir" ]; then
+echo -n "source directory ${target_dir}... "
+if [ -d "$target_dir" ]; then
     echo "exists"
 else
     echo -e "${BAD}does not exist${NORMAL}"
     exit 1
 fi
 
-echo -n "target directory ${target_dir}... "
-if [ -d $target_dir ]; then
+echo -n "link directory ${link_dir}... "
+if [ -d "$link_dir" ]; then
     echo "exists"
 else
     echo "does not exist"
-    mkdir -pv $target_dir
+    mkdir -pv "$link_dir"
 fi
 
 bar 38 "------ Start Linking Repo Files-------"
@@ -46,10 +54,13 @@ for my_link in cpddiff \
 				   tldiff \
 				   tsdiff
 do
-    target=${source_dir}/${my_link}${ext}
-    link=${target_dir}/${my_link}
+	# define target (source)
+	target=${target_dir}/${my_link}${ext}
+	# define link (destination)
+    link=${link_dir}/${my_link}
 
-    echo -n "source file ${target}... "
+	# check if target exists
+	echo -n "target file ${target}... "
     if [ -e "${target}" ]; then
 		echo -n "exists and "
 		permOK=500
@@ -61,34 +72,42 @@ do
 				echo -n "should be"
 			fi
 			echo " executable"
+			# begin linking...
 			echo -n "${TAB}link ${link}... "
-			# first, backup existing copy
-			if [ -L ${link} ] || [ -f ${link} ] || [ -d ${link} ]; then
+			TAB+=${fTAB:='   '}
+			# first, check for existing copy
+			if [ -L "${link}" ] || [ -f "${link}" ] || [ -d "${link}" ]; then
 				echo -n "exists and "
-				if [[ "${target}" -ef ${link} ]]; then
+				if [[ "${target}" -ef "${link}" ]]; then
 					echo "already points to ${my_link}"
 					echo -n "${TAB}"
-					ls -lhG --color=auto ${link}
+					ls -lhG --color=auto "${link}"
 					echo "${TAB}skipping..."
+					TAB=${TAB%$fTAB}
 					continue
 				else
-					if [ $(diff "${target}" ${link} | wc -c) -eq 0 ]; then
-						echo "have the same contents"
-						continue
+					# next, delete or backup existing copy
+					if [ $(diff -ebwB "${target}" "${link}" 2>&1 | wc -c) -eq 0 ]; then
+						echo "has the same contents"
+						echo -n "${TAB}deleting... "
+						rm -v "${link}"
 					else
-						echo -n "will be backed up..."
-						mv -v ${link} ${link}_$(date -r ${link} +'%Y-%m-%d-t%H%M')
+						echo "will be backed up..."
+						mv -v "${link}" "${link}"_$(date -r "${link}" +'%Y-%m-%d-t%H%M') | sed "s/^/${TAB}/"
 					fi
 				fi
 			else
 				echo "does not exist"
 			fi
 			# then link
-			echo -en "${TAB}${GRH}";hline 72;
+			echo -en "${TAB}${GRH}"
+			hline 72
 			echo "${TAB}making link... "
-			ln -sv "${target}" ${link} | sed "s/^/${TAB}/"
-			echo -ne "${TAB}";hline 72;echo -en "${NORMAL}"
-		else
+			ln -sv "${target}" "${link}" | sed "s/^/${TAB}/"
+			echo -ne "${TAB}"
+			hline 72
+			echo -en "${NORMAL}"
+			TAB=${TAB%$fTAB}		else
 			echo -e "${BAD}not executable${NORMAL}"
         fi
 	else
