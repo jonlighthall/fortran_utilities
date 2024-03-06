@@ -3,22 +3,13 @@
 # get starting time in nanoseconds
 start_time=$(date +%s%N)
 
-utils_dir="${HOME}/utils"
-bash_utils_dir="${utils_dir}/bash"
-
 # load formatting
-fpretty="${bash_utils_dir}/.bashrc_pretty"
+fpretty=${HOME}/config/.bashrc_pretty
 if [ -e "$fpretty" ]; then
     source "$fpretty"
     set_traps
     # reset tab
     rtab
-fi
-
-# load linking scripts
-flink="${bash_utils_dir}/.bash_links"
-if [ -e "$flink" ]; then
-    source "$flink"
 fi
 
 # determine if script is being sourced or executed
@@ -42,7 +33,7 @@ make
 # set target and link directories
 src_dir_logi=$(dirname "$src_name")
 proj_name=$(basename "$src_dir_logi")
-target_dir="${utils_dir}/${proj_name}/bin"
+target_dir="${HOME}/utils/${proj_name}/bin"
 link_dir=$HOME/bin
 
 # check directories
@@ -62,7 +53,7 @@ else
     mkdir -pv "$link_dir"
 fi
 
-bar 38 "------ Start Linking Repo Files-------"
+bar 38 "------ Start Linking Repo Files ------"
 
 # list of files to be linked
 ext=.exe
@@ -70,12 +61,15 @@ for my_link in cpddiff \
     prsdiff \
     tldiff \
     tsdiff; do
+
     # define target (source)
     target=${target_dir}/${my_link}${ext}
+
     # define link (destination)
     link=${link_dir}/${my_link}
-    echo "linking $target to $link..."
 
+    # create link
+    decho "linking $target to $link..."
     do_link_exe "$target" "$link"
 done
 bar 38 "--------- Done Making Links ----------"
