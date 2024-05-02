@@ -86,7 +86,7 @@ SUBDIRS :=
 #
 # recipes
 all: $(EXES) $(SUBDIRS)
-	@/bin/echo -e "\n$(THISDIR) $@ done"
+	@/bin/echo -e "$(THISDIR) $@ done"
 $(SUBDIRS):
 	@$(MAKE) --no-print-directory -C $@
 printvars:

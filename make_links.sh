@@ -31,10 +31,6 @@ cbar "Done Compiling"
 target_dir="${src_dir_phys}/bin"
 link_dir=$HOME/bin
 
-# check directories
-check_target ${target_dir}
-do_make_dir ${link_dir}
-
 cbar "Start Making Links"
 # list of files to be linked
 ext=''
