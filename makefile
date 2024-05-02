@@ -79,7 +79,7 @@ OBJS := $(addprefix $(OBJDIR)/,$(OBJS.o))
 MODS := $(addprefix $(MODDIR)/,$(MODS.mod))
 #
 # executables
-EXES = $(addprefix $(BINDIR)/,$(OBJS.o:.o=.exe))
+EXES = $(addprefix $(BINDIR)/,$(OBJS.o:.o=))
 #
 # sub-programs
 SUBDIRS :=
@@ -158,7 +158,7 @@ printvars:
 
 #
 # generic recipes
-$(BINDIR)/%.exe: $(OBJDIR)/%.o $(DEPS) | $(BINDIR)
+$(BINDIR)/%: $(OBJDIR)/%.o $(DEPS) | $(BINDIR)
 	@/bin/echo -e "\nlinking generic executable $@..."
 	$(FC.LINK)
 $(OBJDIR)/%.o: %.f $(MODS) | $(OBJDIR)
@@ -211,7 +211,7 @@ mostlyclean:
 clean: mostlyclean
 # remove binaries and executables
 	@/bin/echo -e "\nremoving compiled executable files..."
-	$(RM) $(BINDIR)/*.exe
+	$(RM) $(BINDIR)/*
 	$(RM) $(BINDIR)
 	$(RM) *.exe
 	$(RM) *.out

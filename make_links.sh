@@ -20,43 +20,24 @@ else
     # exit on errors
     set -e
 fi
-# print source name at start
-echo -e "${TAB}${RUN_TYPE} ${PSDIR}$BASH_SOURCE${RESET}..."
-src_name=$(readlink -f "$BASH_SOURCE")
-if [ ! "$BASH_SOURCE" = "$src_name" ]; then
-    echo -e "${TAB}${VALID}link${RESET} -> $src_name"
-fi
+print_source
 
 # generate executables before linking
+cbar "Start Compiling"
 make
+cbar "Done Compiling"
 
 # set target and link directories
-src_dir_logi=$(dirname "$src_name")
-proj_name=$(basename "$src_dir_logi")
-target_dir="${HOME}/utils/${proj_name}/bin"
+target_dir="${src_dir_phys}/bin"
 link_dir=$HOME/bin
 
 # check directories
-echo -n "target directory ${target_dir}... "
-if [ -d "$target_dir" ]; then
-    echo "exists"
-else
-    echo -e "${BAD}does not exist${RESET}"
-    exit 1
-fi
+check_target ${target_dir}
+do_make_dir ${link_dir}
 
-echo -n "link directory ${link_dir}... "
-if [ -d "$link_dir" ]; then
-    echo "exists"
-else
-    echo "does not exist"
-    mkdir -pv "$link_dir"
-fi
-
-bar 38 "------ Start Linking Repo Files ------"
-
+cbar "Start Making Links"
 # list of files to be linked
-ext=.exe
+ext=''
 for my_link in cpddiff \
     prsdiff \
     tldiff \
@@ -72,4 +53,4 @@ for my_link in cpddiff \
     decho "linking $target to $link..."
     do_link_exe "$target" "$link"
 done
-bar 38 "--------- Done Making Links ----------"
+cbar "Done Making Links"
