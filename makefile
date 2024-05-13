@@ -86,7 +86,7 @@ SUBDIRS :=
 #
 # recipes
 all: $(EXES) $(SUBDIRS)
-	@/bin/echo -e "$(THISDIR) $@ done"
+	@/bin/echo -e "$${TAB}$(THISDIR) $@ done"
 $(SUBDIRS):
 	@$(MAKE) --no-print-directory -C $@
 printvars:
