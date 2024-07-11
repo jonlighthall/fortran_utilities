@@ -10,7 +10,7 @@ output = -o $@
 # options
 options = -fimplicit-none -std=f2008
 warnings = -Wall -Wsurprising -W -pedantic -Warray-temporaries -Wcharacter-truncation	\
--Wimplicit-interface -Wintrinsics-std
+-Wimplicit-interface -Wintrinsics-std -Waliasing -Wextra
 debug = -g -fbacktrace -ffpe-trap=invalid,zero,overflow,underflow,denormal
 #
 # additional options for gfortran v4.5 and later
