@@ -4,17 +4,31 @@ program cpddiff
   ! Aug 2022 JCL
   implicit none
   integer,parameter :: srk = selected_real_kind(2)
+  ! range
   real(kind=srk), dimension(:), allocatable :: r1,r2
+  ! TL
   real(kind=srk), dimension(:,:), allocatable :: tl1,tl2
-  integer :: i,n1,io,ln1,ln2,unit1,unit2,n2,ln3,nerr,ns1,j,ls,ns2,nerr2,nerr3
-  character(len=256) :: fname1, fname2, tlthresh,dummy
-  real(kind=srk)::dtl,dtl_max
+  real(kind=srk)::dtl,dtl_max=0
+  ! arguments
+  integer :: ln1,ln2,ln3
+  ! file parameters
+  integer :: io,ls,n1,n2,ns1,ns2,unit1,unit2
+  character(len=256) :: dummy,fname1,fname2,tlthresh
+  ! counters
+  integer :: i,j
+  integer :: nerr=0,nerr2=0,nerr3=0
   ! ----------------------------------------------------------
   ! set thresholds
-  real(kind=srk),parameter :: rdiff=0.01
-  real(kind=srk)::tl_diff=0.001
-  real(kind=srk),parameter :: tl_red=0.01, comp_diff=0.001
+  ! see ramio/outpt.f, format 20
+  ! ranges are formatted as f12.2
+  ! the minimum difference between ranges is therefore 0.01
+  real(kind=srk),parameter :: rng_min_diff=0.01
+  real(kind=srk) :: tl_min_diff=0.001
+
+  real(kind=srk) :: dtl_thresh=0.01
+  real(kind=srk),parameter :: comp_diff=0.001
   real(kind=srk),parameter :: tlmax=-20*log10(2.**(-23))
+  real(kind=srk)::dtl_error
   ! ----------------------------------------------------------
   integer :: nm1,nm2
   real(kind=srk)::f1,f2
@@ -25,12 +39,13 @@ program cpddiff
   call get_command_argument(1,fname1,ln1)
   call get_command_argument(2,fname2,ln2)
   call get_command_argument(3,tlthresh,ln3)
-100 format(a,f7.3)
+100 format(a12,' = ',f7.3)
+  print 100,'rng min dif',rng_min_diff
   print 100,' tl max = ',tlmax
-  print 100,' tl dif = ',tl_red
+  print 100,' tl dif = ',dtl_thresh
   print 100,' tl com = ',comp_diff
 
-  !     set file names
+  ! set file names
   if (ln1.eq.0) then
      fname1='calcpduct.out'
   end if
@@ -39,14 +54,26 @@ program cpddiff
   end if
 
   if (ln3.gt.0) then
-     read(tlthresh,*)tl_diff
+     read(tlthresh,*)dtl_thresh
+     print *, 'using user-defined dtl_thresh'
+  else
+     print *, 'using default dtl_thresh'
   end if
 
-  !     open files
+  print 100,' tl threh',dtl_thresh
+  print 100,' tl diff',comp_diff
+  dtl_error=dtl_thresh+comp_diff
+  print 100,' tl error',dtl_error
+
+  if (tl_min_diff.gt.dtl_error) then
+     print *, 'tl_min_diff < dtl_error'
+  endif
+
+  ! open files
   open (newunit=unit1, file = fname1, status = 'old')
   open (newunit=unit2, file = fname2, status = 'old')
 
-  !     check file length
+  ! check file length
   n1=0  ! number of lines
   ns1=0 ! number of spaces (delimiters)
   ls=0  ! position of last space
@@ -89,7 +116,7 @@ program cpddiff
      if (io/=0) exit
      n1=n1+1
   enddo
-  print '(2a,i5,a,i3,a)',trim(fname1),' has ',n1,' lines and ',ns1,' delimiters'
+  print '(1x,2a,i5,a,i3,a)',trim(fname1),' has ',n1,' lines and ',ns1,' delimiters'
   ! compare dimensions with header
   if (n1.eq.nm1) then
      print *, 'number of lines matches number of environments: ',n1
@@ -110,7 +137,6 @@ program cpddiff
         read(unit2,*) nm2,f2 ! read header line
         print *,'nm2 = ',nm2
         print *,'f2 = ',f2
-
         read(unit2,'(a)',iostat=io) dummy
         do j=1,len(trim(dummy))
            if(dummy(j:j) == ' ') then
@@ -144,43 +170,46 @@ program cpddiff
      if (io/=0) exit
      n2=n2+1
   enddo
-
+102 format(1x,a,i5)
   if (n1.eq.n2) then
-     print *, 'file lengths match: ',n1
+     print 102, 'file lengths match: ',n1
   else
      print *, 'file lengths do not match'
-     print *, 'length file 1 = ',n1
-     print *, 'length file 2 = ',n2
+     print 102, 'length file 1 = ',n1
+     print 102, 'length file 2 = ',n2
      close(unit1)
      close(unit2)
      stop 1
   endif
 
   if (ns1.eq.ns2) then
-     print *, 'number of file delimiters match: ',ns1
+     print 102, 'number of file delimiters match: ',ns1
   else
      print *, 'number of file delimiters do not match'
-     print *, 'delim file 1 = ',ns1
-     print *, 'delim file 2 = ',ns2
+     print 102, 'delim file 1 = ',ns1
+     print 102, 'delim file 2 = ',ns2
      close(unit1)
      close(unit2)
      stop 1
   endif
 
-  !     read file
+  ! read file 1
   allocate(r1(n1),tl1(n1,ns1))
   rewind(unit1)
   read(unit1,*)dummy ! read header line
+  ! loop over lines
   do i = 1,n1
      read(unit1,*) r1(i), (tl1(i,j), j=1,ns1)
   end do
   close(unit1)
+  ! read file 2 and compare ranges to file 1
   allocate(r2(n1),tl2(n1,ns1))
   rewind(unit2)
   read(unit2,*)dummy ! read header line
+  ! loop over lines
   do i = 1,n1
      read(unit2,*) r2(i), (tl2(i,j),j=1,ns1)
-     if (abs(r1(i)-r2(i)).gt.rdiff) then
+     if (abs(r1(i)-r2(i)).gt.rng_min_diff) then
         print *, 'ranges do not match'
         print *, 'range ',i,' file 1 = ',i,r1(i)
         print *, 'range ',i,' file 2 = ',i,r2(i)
@@ -202,17 +231,15 @@ program cpddiff
   print*,'minimum precisions per column'
   print*,dp_check
 
-  !     print summary
-  nerr=0
-  nerr2=0
-  nerr3=0
-  dtl_max=0
+  ! print summary
+  ! loop over lines
   do i = 1,n1
+     ! loop over columns
      do j=1,ns1
+        ! calculate absolute difference in TL
         dtl=abs(tl1(i,j)-tl2(i,j))
-
-        tl_diff=p_check(j+1)/2
-        if(dtl-tl_diff.gt.epsilon(dtl)) then
+        tl_min_diff=p_check(j+1)/2
+        if(dtl-tl_min_diff.gt.epsilon(dtl)) then
                    if (dtl.gt.dtl_max) dtl_max=dtl
            if (nerr.eq.0) then ! print table header on first error
               print'(/a)','   ix   iz    range   tl1          tl2        |  diff        thresh'
@@ -232,22 +259,25 @@ program cpddiff
            write(*,'(a)',advance='no') ' | '
            write(*,fmt,advance='no') dtl
 
-           write(*,fmt) tl_diff
+           write(*,fmt) tl_min_diff
 
-           if((tl1(i,j).lt.tlmax).and.(tl2(i,j).lt.tlmax).and.(dtl.gt.(tl_red+comp_diff)))then
+           if((tl1(i,j).lt.tlmax).and.(tl2(i,j).lt.tlmax).and.(dtl.gt.(dtl_error)))then
               nerr3=nerr3+1
            endif
         endif
      enddo
   enddo
-  print '(/a,f6.3,a,i0)',' number of errors found (>',tl_diff,'): ',nerr
-  if(tl_red.ge.tl_diff) then
-     print '(a,f6.3,a,i0)',' number of errors found (>',tl_red+comp_diff,'): ',nerr2
-     print '(a,f6.3,a,f5.1,a,i0)',' number of errors found (>',tl_red+comp_diff,' and tl < ',tlmax,'): ',nerr3
-  endif
+  print '(/a,f6.3,a,i0)',' number of errors found (>',tl_min_diff,'): ',nerr
+  print '(a,f6.3,a,i0)',' number of errors found (>',dtl_error,'): ',nerr2
+  print '(a,f6.3,a,f5.1,a,i0)',' number of errors found (>',dtl_error,' and tl < ',tlmax,'): ',nerr3
   print '(a,f8.5)',' maximum error : ',dtl_max
 
+  print *, 'tl1 = ',trim(fname1)
+  print *, 'tl2 = ',trim(fname2)
   if (nerr3.gt.0) then
+     print *, ''//achar(27)//'[31mERROR'//achar(27)//'[0m'
      stop 1
+  else
+     print *, ''//achar(27)//'[32mOK'//achar(27)//'[0m'
   endif
 end program cpddiff

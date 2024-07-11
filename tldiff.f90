@@ -26,7 +26,6 @@ program tldiff
   integer :: nerr=0,nerr2=0,nerr3=0
   ! ----------------------------------------------------------
   ! set thresholds
-
   ! see ramio/outpt.f, format 20
   ! ranges are formatted as f12.2
   ! the minimum difference between ranges is therefore 0.01
@@ -173,10 +172,7 @@ program tldiff
   ! print summary
   print *, 'tl1 = ',trim(fname1)
   print *, 'tl2 = ',trim(fname2)
-
-  dtl_max=0
 101 format(a,f4.1,a)
-
   ! loop over lines
   do i = 1,n1
      ! loop over columns
