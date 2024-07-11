@@ -1,14 +1,12 @@
 program tldiff
   ! TL diff - calculate difference between two transmission loss files
   !
-  ! The files are assumed to be formatted with range in the first column and TL
-  ! in the remaining columns. First, the dimensions of the two files are
-  ! compared. The number of lines and the number of columns (delimiters) must
-  ! match. Next, the ranges are compared (first column). Each range value must
-  ! match to withing the parameter rdiff. Then, the TL is compared, element by
-  ! element and summary is printed. If any elements (less than the maximum TL
-  ! value) differ by more than the sum of the parameters dtl_print and comp_diff,
-  ! the program returns an error.
+  ! The files are assumed to be formatted with range in the first column and TL in the remaining
+  ! columns. First, the dimensions of the two files are compared. The number of lines and the
+  ! number of columns (delimiters) must match. Next, the ranges are compared (first column). Each
+  ! range value must match to withing the parameter rdiff. Then, the TL is compared, element by
+  ! element and summary is printed. If any elements (less than the maximum TL value) differ by
+  ! more than the sum of the parameters dtl_thresh and comp_diff, the program returns an error.
   !
   ! Aug 2022 JCL
   implicit none
@@ -37,7 +35,7 @@ program tldiff
   ! the minimum difference between ranges is therefore 0.1
   real(kind=srk),parameter :: tl_min_diff=0.1
 
-  real(kind=srk) :: tl_red=0.1
+  real(kind=srk) :: dtl_thresh=0.1
   real(kind=srk),parameter :: comp_diff=tl_min_diff/2.
   real(kind=srk),parameter :: tlmax=-20*log10(2.**(-23))
   real(kind=srk)::dtl_error
@@ -45,10 +43,10 @@ program tldiff
   call get_command_argument(1,fname1,ln1)
   call get_command_argument(2,fname2,ln2)
   call get_command_argument(3,tlthresh,ln3)
-100 format(a,f7.3)
-  print 100,' rn dif = ',rng_min_diff
-  print 100,' tl dif = ',tl_min_diff
-  print 100,' tl max = ',tlmax
+100 format(a12,' = ',f7.3)
+  print 100,'rng min dif',rng_min_diff
+  print 100,'tl min dif',tl_min_diff
+  print 100,'tl max',tlmax
 
   ! set file names
   if (ln1.eq.0) then
@@ -59,32 +57,26 @@ program tldiff
   end if
 
   if (ln3.gt.0) then
-     read(tlthresh,*)tl_red
-     print *, 'using user-defined tl_red'
+     read(tlthresh,*)dtl_thresh
+     print *, 'using user-defined dtl_thresh'
   else
-     print *, 'using default tl_red'
+     print *, 'using default dtl_thresh'
   end if
-  ! if (tl_min_diff.gt.tl_red) then
-  !    print *, 'adjusting tl_min_diff'
-  !    tl_min_diff=tl_min_diff-comp_diff
-  ! endif
 
-  print 100,' tl red = ',tl_red
-  print 100,' tl com = ',comp_diff
-  dtl_error=tl_red+comp_diff
-  print 100,' tl err = ',dtl_error
+  print 100,' tl threh',dtl_thresh
+  print 100,' tl diff',comp_diff
+  dtl_error=dtl_thresh+comp_diff
+  print 100,' tl error',dtl_error
 
   if (tl_min_diff.gt.dtl_error) then
      print *, 'tl_min_diff < dtl_error'
-     print *, 'error values invalid'
-     !     STOP 1
   endif
 
-  !     open files
+  ! open files
   open (newunit=unit1, file = fname1, status = 'old')
   open (newunit=unit2, file = fname2, status = 'old')
 
-  !     check file length
+  ! check file length
   n1=0  ! number of lines
   ns1=0 ! number of spaces (delimiters)
   ls=0  ! position of last space
@@ -106,7 +98,7 @@ program tldiff
      if (io/=0) exit
      n1=n1+1
   enddo
-  print '(2a,i5,a,i3,a)',trim(fname1),' has ',n1,' lines and ',ns1,' delimiters'
+  print '(1x,2a,i5,a,i3,a)',trim(fname1),' has ',n1,' lines and ',ns1,' delimiters'
 
   n2=0
   ns2=0
@@ -129,24 +121,24 @@ program tldiff
      if (io/=0) exit
      n2=n2+1
   enddo
-
+102 format(1x,a,i5)
   if (n1.eq.n2) then
-     print *, 'file lengths match: ',n1
+     print 102, 'file lengths match: ',n1
   else
      print *, 'file lengths do not match'
-     print *, 'length file 1 = ',n1
-     print *, 'length file 2 = ',n2
+     print 102, 'length file 1 = ',n1
+     print 102, 'length file 2 = ',n2
      close(unit1)
      close(unit2)
      stop 1
   endif
 
   if (ns1.eq.ns2) then
-     print *, 'number of file delimiters match: ',ns1
+     print 102, 'number of file delimiters match: ',ns1
   else
      print *, 'number of file delimiters do not match'
-     print *, 'delim file 1 = ',ns1
-     print *, 'delim file 2 = ',ns2
+     print 102, 'delim file 1 = ',ns1
+     print 102, 'delim file 2 = ',ns2
      close(unit1)
      close(unit2)
      stop 1
