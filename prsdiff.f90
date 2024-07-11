@@ -161,7 +161,9 @@ program prsdiff
   do i = 1,n1
      ! loop over pairs
      do j=1,np1
+        ! calculate absolute difference
         dp=abs(p1(i,j)-p2(i,j))
+        ! compare to maximum difference
         if (dp.gt.dp_max) dp_max=dp
         if(dp.gt.pdiff) then
            if (nerr.eq.0) then ! print table header on first error
