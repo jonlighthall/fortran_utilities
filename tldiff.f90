@@ -23,7 +23,7 @@ program tldiff
   character(len=256) :: dummy,fname1,fname2,tlthresh
   ! counters
   integer :: i,j
-  integer :: nerr=0,nerr2=0,nerr3=0
+  integer :: nerr=0,nerr2=0,nerr3=0,nerr4=0
   ! ----------------------------------------------------------
   ! set thresholds
   ! see ramio/outpt.f, format 20
@@ -37,6 +37,7 @@ program tldiff
   real(kind=srk) :: dtl_thresh=0.1
   real(kind=srk),parameter :: comp_diff=tl_min_diff/2.
   real(kind=srk),parameter :: tlmax=-20*log10(2.**(-23))
+  real(kind=srk),parameter :: tlmax2=110
   real(kind=srk)::dtl_error
   ! ----------------------------------------------------------
   call get_command_argument(1,fname1,ln1)
@@ -191,12 +192,16 @@ program tldiff
            write(*,'(2i5,f9.2)',advance='no') i,j,r1(i)
 
            if(tl1(i,j).gt.tlmax)then
+              write(*,'(a,f7.1,a)',advance='no') ''//achar(27)//'[31m',tl1(i,j),''//achar(27)//'[0m'
+           elseif(tl1(i,j).gt.tlmax2)then
               write(*,'(a,f7.1,a)',advance='no') ''//achar(27)//'[33m',tl1(i,j),''//achar(27)//'[0m'
            else
               write(*,'(f7.1)',advance='no') tl1(i,j)
            endif
 
            if(tl2(i,j).gt.tlmax)then
+              write(*,'(a,f7.1,a,a)',advance='no') ''//achar(27)//'[31m',tl2(i,j),''//achar(27)//'[0m',' | '
+           elseif(tl2(i,j).gt.tlmax2)then
               write(*,'(a,f7.1,a,a)',advance='no') ''//achar(27)//'[33m',tl2(i,j),''//achar(27)//'[0m',' | '
            else
               write(*,'(f7.1,a)',advance='no') tl2(i,j),' | '
@@ -213,15 +218,20 @@ program tldiff
               write(*,101) '',dtl,''
            endif
 
-           if((tl1(i,j).lt.tlmax).and.(tl2(i,j).lt.tlmax).and.(dtl.gt.(dtl_error)))then
+           if((tl1(i,j).lt.tlmax2).and.(tl2(i,j).lt.tlmax2).and.(dtl.gt.(dtl_error)))then
               nerr3=nerr3+1
            endif
+           if((tl1(i,j).lt.tlmax).and.(tl2(i,j).lt.tlmax).and.(dtl.gt.(dtl_error)))then
+              nerr4=nerr4+1
+           endif
+
         endif
      enddo
   enddo
   print '(/a,f6.3,a,i0)',' number of errors found (>',tl_min_diff,'): ',nerr
   print '(a,f6.3,a,i0)',' number of errors found (>',dtl_error,'): ',nerr2
-  print '(a,f6.3,a,f5.1,a,i0)',' number of errors found (>',dtl_error,' and tl < ',tlmax,'): ',nerr3
+  print '(a,f6.3,a,f5.1,a,i0)',' number of errors found (>',dtl_error,' and tl < ',tlmax2,'): ',nerr3
+  print '(a,f6.3,a,f5.1,a,i0)',' number of errors found (>',dtl_error,' and tl < ',tlmax,'): ',nerr4
   print '(a,f6.3)',' maximum error : ',dtl_max
   if(dtl_max-tl_min_diff.lt.comp_diff) print *, 'max diff equals min diff'
 
