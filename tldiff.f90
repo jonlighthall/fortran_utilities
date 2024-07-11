@@ -50,7 +50,7 @@ program tldiff
   else
      print *, 'using default dtl_print'
   end if
-  print 100,' tl dif = ',tl_diff
+  print 100,' tl dif = ',dtl_print
 
   !     open files
   open (newunit=unit1, file = fname1, status = 'old')
