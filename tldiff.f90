@@ -24,6 +24,7 @@ program tldiff
   real(kind=srk)::tl_diff=0.01
   real(kind=srk),parameter :: tl_red=0.1, comp_diff=0.001
   real(kind=srk),parameter :: tlmax=-20*log10(2.**(-23))
+  real(kind=srk)::tl_thresh
   ! ----------------------------------------------------------
   call get_command_argument(1,fname1,ln1)
   call get_command_argument(2,fname2,ln2)
@@ -32,6 +33,8 @@ program tldiff
   print 100,' tl max = ',tlmax
   print 100,' tl red = ',tl_red
   print 100,' tl com = ',comp_diff
+  tl_thresh=tl_red+comp_diff
+  print 100,' tl thr = ',tl_thresh
 
   !     set file names
   if (ln1.eq.0) then
@@ -43,6 +46,9 @@ program tldiff
 
   if (ln3.gt.0) then
      read(tlthresh,*)tl_diff
+     print *, 'using user-defined tl_diff'
+  else
+     print *, 'using default tl_diff'
   end if
   print 100,' tl dif = ',tl_diff
 
@@ -178,7 +184,7 @@ program tldiff
               write(*,'(f7.1,a)',advance='no') tl2(i,j),' | '
            endif
 
-           if(dtl.gt.(tl_red+comp_diff)) then
+           if(dtl.gt.(tl_thresh)) then
               if((tl1(i,j).gt.tlmax).or.(tl2(i,j).gt.tlmax))then
                  print '(a,f4.1,a)',''//achar(27)//'[33m',dtl,''//achar(27)//'[0m'
               else
@@ -189,7 +195,7 @@ program tldiff
               write(*,'(f4.1)') dtl
            endif
 
-           if((tl1(i,j).lt.tlmax).and.(tl2(i,j).lt.tlmax).and.(dtl.gt.(tl_red+comp_diff)))then
+           if((tl1(i,j).lt.tlmax).and.(tl2(i,j).lt.tlmax).and.(dtl.gt.(tl_thresh)))then
               nerr3=nerr3+1
            endif
         endif
@@ -197,8 +203,8 @@ program tldiff
   enddo
   print '(/a,f6.3,a,i0)',' number of errors found (>',tl_diff,'): ',nerr
   if(tl_red.ge.tl_diff) then
-     print '(a,f6.3,a,i0)',' number of errors found (>',tl_red+comp_diff,'): ',nerr2
-     print '(a,f6.3,a,f5.1,a,i0)',' number of errors found (>',tl_red+comp_diff,' and tl < ',tlmax,'): ',nerr3
+     print '(a,f6.3,a,i0)',' number of errors found (>',tl_thresh,'): ',nerr2
+     print '(a,f6.3,a,f5.1,a,i0)',' number of errors found (>',tl_thresh,' and tl < ',tlmax,'): ',nerr3
   endif
   print '(a,f6.3)',' maximum error : ',dtl_max
 
