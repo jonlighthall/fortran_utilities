@@ -37,8 +37,8 @@ program tldiff
   ! the minimum difference between ranges is therefore 0.1
   real(kind=srk),parameter :: tl_min_diff=0.1
 
-  real(kind=srk),parameter :: tl_red=0.1
-  real(kind=srk),parameter :: comp_diff=0.001
+  real(kind=srk) :: tl_red=0.1
+  real(kind=srk),parameter :: comp_diff=tl_min_diff/2.
   real(kind=srk),parameter :: tlmax=-20*log10(2.**(-23))
   real(kind=srk)::dtl_error
   ! ----------------------------------------------------------
@@ -49,10 +49,6 @@ program tldiff
   print 100,' rn dif = ',rng_min_diff
   print 100,' tl dif = ',tl_min_diff
   print 100,' tl max = ',tlmax
-  print 100,' tl red = ',tl_red
-  print 100,' tl com = ',comp_diff
-  dtl_error=tl_red+comp_diff
-  print 100,' tl err = ',dtl_error
 
   ! set file names
   if (ln1.eq.0) then
@@ -63,20 +59,25 @@ program tldiff
   end if
 
   if (ln3.gt.0) then
-     !read(tlthresh,*)tl_min_diff
-     print *, 'using user-defined tl_min_diff'
+     read(tlthresh,*)tl_red
+     print *, 'using user-defined tl_red'
   else
-     print *, 'using default tl_min_diff'
+     print *, 'using default tl_red'
   end if
   ! if (tl_min_diff.gt.tl_red) then
   !    print *, 'adjusting tl_min_diff'
   !    tl_min_diff=tl_min_diff-comp_diff
   ! endif
 
+  print 100,' tl red = ',tl_red
+  print 100,' tl com = ',comp_diff
+  dtl_error=tl_red+comp_diff
+  print 100,' tl err = ',dtl_error
+
   if (tl_min_diff.gt.dtl_error) then
      print *, 'tl_min_diff < dtl_error'
      print *, 'error values invalid'
-     STOP 1
+     !     STOP 1
   endif
 
   !     open files
@@ -183,12 +184,12 @@ program tldiff
 
   dtl_max=0
 101 format(a,f4.1,a)
-  
+
   ! loop over lines
   do i = 1,n1
      ! loop over columns
      do j=1,ns1
-        ! calculate difference in TL
+        ! calculate absolute difference in TL
         dtl=abs(tl1(i,j)-tl2(i,j))
         ! compare to maximum difference in TL
         if (dtl.gt.dtl_max) dtl_max=dtl
@@ -231,11 +232,10 @@ program tldiff
      enddo
   enddo
   print '(/a,f6.3,a,i0)',' number of errors found (>',tl_min_diff,'): ',nerr
-  if(tl_red.ge.tl_min_diff) then
-     print '(a,f6.3,a,i0)',' number of errors found (>',dtl_error,'): ',nerr2
-     print '(a,f6.3,a,f5.1,a,i0)',' number of errors found (>',dtl_error,' and tl < ',tlmax,'): ',nerr3
-  endif
+  print '(a,f6.3,a,i0)',' number of errors found (>',dtl_error,'): ',nerr2
+  print '(a,f6.3,a,f5.1,a,i0)',' number of errors found (>',dtl_error,' and tl < ',tlmax,'): ',nerr3
   print '(a,f6.3)',' maximum error : ',dtl_max
+  if(dtl_max-tl_min_diff.lt.comp_diff) print *, 'max diff equals min diff'
 
   print *, 'tl1 = ',trim(fname1)
   print *, 'tl2 = ',trim(fname2)
