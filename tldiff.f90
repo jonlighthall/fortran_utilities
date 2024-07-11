@@ -30,7 +30,7 @@ program tldiff
   call get_command_argument(3,tlthresh,ln3)
 100 format(a,f7.3)
   print 100,' tl max = ',tlmax
-  print 100,' tl dif = ',tl_red
+  print 100,' tl red = ',tl_red
   print 100,' tl com = ',comp_diff
 
   !     set file names
@@ -44,6 +44,7 @@ program tldiff
   if (ln3.gt.0) then
      read(tlthresh,*)tl_diff
   end if
+  print 100,' tl dif = ',tl_diff
 
   !     open files
   open (newunit=unit1, file = fname1, status = 'old')
@@ -140,15 +141,23 @@ program tldiff
   close(unit2)
   print *, 'ranges match'
 
-  !     print summary
+  print *, 'tl1 = ',trim(fname1)
+  print *, 'tl2 = ',trim(fname2)
+
+  ! print summary
   nerr=0
   nerr2=0
   nerr3=0
   dtl_max=0
+  ! loop over lines
   do i = 1,n1
+     ! loop over columns
      do j=1,ns1
+        ! calculate difference in TL
         dtl=abs(tl1(i,j)-tl2(i,j))
+        ! compare to maximum difference in TL
         if (dtl.gt.dtl_max) dtl_max=dtl
+        ! compare to tl_diff
         if(dtl.gt.tl_diff) then
            if (nerr.eq.0) then ! print table header on first error
               print'(/a)','   ix   iz    range    tl1    tl2 | diff'
@@ -158,19 +167,23 @@ program tldiff
            write(*,'(2i5,f9.2)',advance='no') i,j,r1(i)
 
            if(tl1(i,j).gt.tlmax)then
-              write(*,'(a,f7.1,a)',advance='no') ''//achar(27)//'[31m',tl1(i,j),''//achar(27)//'[0m'
+              write(*,'(a,f7.1,a)',advance='no') ''//achar(27)//'[33m',tl1(i,j),''//achar(27)//'[0m'
            else
               write(*,'(f7.1)',advance='no') tl1(i,j)
            endif
 
            if(tl2(i,j).gt.tlmax)then
-              write(*,'(a,f7.1,a,a)',advance='no') ''//achar(27)//'[31m',tl2(i,j),''//achar(27)//'[0m',' | '
+              write(*,'(a,f7.1,a,a)',advance='no') ''//achar(27)//'[33m',tl2(i,j),''//achar(27)//'[0m',' | '
            else
               write(*,'(f7.1,a)',advance='no') tl2(i,j),' | '
            endif
 
            if(dtl.gt.(tl_red+comp_diff)) then
-              print '(a,f4.1,a)',''//achar(27)//'[31m',dtl,''//achar(27)//'[0m'
+              if((tl1(i,j).gt.tlmax).or.(tl2(i,j).gt.tlmax))then
+                 print '(a,f4.1,a)',''//achar(27)//'[33m',dtl,''//achar(27)//'[0m'
+              else
+                 print '(a,f4.1,a)',''//achar(27)//'[31m',dtl,''//achar(27)//'[0m'
+              endif
               nerr2=nerr2+1
            else
               write(*,'(f4.1)') dtl
@@ -189,7 +202,12 @@ program tldiff
   endif
   print '(a,f6.3)',' maximum error : ',dtl_max
 
+  print *, 'tl1 = ',trim(fname1)
+  print *, 'tl2 = ',trim(fname2)
   if (nerr3.gt.0) then
+     print *, ''//achar(27)//'[31mERROR'//achar(27)//'[0m'
      stop 1
+  else
+     print *, ''//achar(27)//'[32mOK'//achar(27)//'[0m'
   endif
 end program tldiff
