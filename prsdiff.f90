@@ -4,22 +4,33 @@ program prsdiff
   ! Aug 2022 JCL
   implicit none
   integer,parameter :: srk = selected_real_kind(2)
+  ! range
   real(kind=srk), dimension(:), allocatable :: r1,r2
-  real(kind=srk), dimension(:,:), allocatable :: pr1,pi1,tl1,tl2,pr2,pi2
+  ! pressure
+  real(kind=srk), dimension(:,:), allocatable :: pi1,pi2,pr1,pr2,tl1,tl2
   complex(kind=srk), dimension(:,:), allocatable :: p1,p2
-  integer :: i,n1,io,ln1,ln2,unit1,unit2,n2,ln3,nerr,ns1,j,ls,ns2,np1
-  character(len=256) :: fname1, fname2, tlthresh,dummy
-  real(kind=srk)::dp_max,dp
+  real(kind=srk):: dp,dp_max=0
+  ! arguments
+  integer :: ln1,ln2,ln3
+  ! file parameters
+  integer :: io,ls,n1,n2,np1,ns1,ns2,unit1,unit2
+  character(len=256) :: dummy,fname1,fname2,tlthresh
+  ! counters
+  integer :: i,j
+  integer :: nerr=0
   ! ----------------------------------------------------------
   ! set thresholds
-  real(kind=srk),parameter :: rdiff=0.01
+  ! see ramio/outpt.f, format 20
+  ! ranges are formatted as f12.2
+  ! the minimum difference between ranges is therefore 0.01
+  real(kind=srk),parameter :: rng_min_diff=0.01
   real(kind=srk) :: pdiff=1e-3
   ! ----------------------------------------------------------
   call get_command_argument(1,fname1,ln1)
   call get_command_argument(2,fname2,ln2)
   call get_command_argument(3,tlthresh,ln3)
 
-  !     set file names
+  ! set file names
   if (ln1.eq.0) then
      fname1='nspe02.asc'
   end if
@@ -31,11 +42,11 @@ program prsdiff
      read(tlthresh,*)pdiff
   end if
 
-  !     open files
+  ! open files
   open (newunit=unit1, file = fname1, status = 'old')
   open (newunit=unit2, file = fname2, status = 'old')
 
-  !     check file length
+  ! check file length
   n1=0  ! number of lines
   ns1=0 ! number of spaces (delimiters)
   ls=0  ! position of last space
@@ -57,7 +68,7 @@ program prsdiff
      if (io/=0) exit
      n1=n1+1
   enddo
-  print '(2a,i5,a,i3,a)',trim(fname1),' has ',n1,' lines and ',ns1,' delimiters'
+  print '(1x,2a,i5,a,i3,a)',trim(fname1),' has ',n1,' lines and ',ns1,' delimiters'
   np1=(ns1)/2 ! number of complex pairs
 
   n2=0
@@ -81,41 +92,44 @@ program prsdiff
      if (io/=0) exit
      n2=n2+1
   enddo
-
+102 format(1x,a,i5)
   if (n1.eq.n2) then
-     print *, 'file lengths match: ',n1
+     print 102, 'file lengths match: ',n1
   else
      print *, 'file lengths do not match'
-     print *, 'length file 1 = ',n1
-     print *, 'length file 2 = ',n2
+     print 102, 'length file 1 = ',n1
+     print 102, 'length file 2 = ',n2
      close(unit1)
      close(unit2)
      stop 1
   endif
 
   if (ns1.eq.ns2) then
-     print *, 'number of file delimiters match: ',ns1
+     print 102, 'number of file delimiters match: ',ns1
   else
      print *, 'number of file delimiters do not match'
-     print *, 'delim file 1 = ',ns1
-     print *, 'delim file 2 = ',ns2
+     print 102, 'delim file 1 = ',ns1
+     print 102, 'delim file 2 = ',ns2
      close(unit1)
      close(unit2)
      stop 1
   endif
 
-  !     read file
+  ! read file 1
   allocate(r1(n1),tl1(n1,ns1),p1(n1,np1),pr1(n1,np1),pi1(n1,np1))
   rewind(unit1)
+  ! loop over lines
   do i = 1,n1
      read(unit1,*) r1(i), (tl1(i,j), j=1,ns1)
   end do
   close(unit1)
+  ! read file 2 and compare ranges to file 1
   allocate(r2(n1),tl2(n1,ns1),p2(n1,np1),pr2(n1,np1),pi2(n1,np1))
   rewind(unit2)
+  ! loop over lines
   do i = 1,n1
      read(unit2,*) r2(i), (tl2(i,j),j=1,ns1)
-     if (abs(r1(i)-r2(i)).gt.rdiff) then
+     if (abs(r1(i)-r2(i)).gt.rng_min_diff) then
         print *, 'ranges do not match'
         print *, 'range ',i,' file 1 = ',i,r1(i)
         print *, 'range ',i,' file 2 = ',i,r2(i)
@@ -142,10 +156,10 @@ program prsdiff
      enddo
   enddo
 
-  !     print summary
-  nerr=0
-  dp_max=0
+  ! print summary
+  ! loop over lines
   do i = 1,n1
+     ! loop over pairs
      do j=1,np1
         dp=abs(p1(i,j)-p2(i,j))
         if (dp.gt.dp_max) dp_max=dp
