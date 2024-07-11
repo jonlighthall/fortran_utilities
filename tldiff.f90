@@ -7,7 +7,7 @@ program tldiff
   ! match. Next, the ranges are compared (first column). Each range value must
   ! match to withing the parameter rdiff. Then, the TL is compared, element by
   ! element and summary is printed. If any elements (less than the maximum TL
-  ! value) differ by more than the sum of the parameters tl_diff and comp_diff,
+  ! value) differ by more than the sum of the parameters dtl_print and comp_diff,
   ! the program returns an error.
   !
   ! Aug 2022 JCL
@@ -21,10 +21,10 @@ program tldiff
   ! ----------------------------------------------------------
   ! set thresholds
   real(kind=srk),parameter :: rdiff=0.01
-  real(kind=srk)::tl_diff=0.01
+  real(kind=srk)::dtl_print=0.01
   real(kind=srk),parameter :: tl_red=0.1, comp_diff=0.001
   real(kind=srk),parameter :: tlmax=-20*log10(2.**(-23))
-  real(kind=srk)::tl_thresh
+  real(kind=srk)::dtl_error
   ! ----------------------------------------------------------
   call get_command_argument(1,fname1,ln1)
   call get_command_argument(2,fname2,ln2)
@@ -33,8 +33,8 @@ program tldiff
   print 100,' tl max = ',tlmax
   print 100,' tl red = ',tl_red
   print 100,' tl com = ',comp_diff
-  tl_thresh=tl_red+comp_diff
-  print 100,' tl thr = ',tl_thresh
+  dtl_error=tl_red+comp_diff
+  print 100,' tl err = ',dtl_error
 
   !     set file names
   if (ln1.eq.0) then
@@ -45,10 +45,10 @@ program tldiff
   end if
 
   if (ln3.gt.0) then
-     read(tlthresh,*)tl_diff
-     print *, 'using user-defined tl_diff'
+     read(tlthresh,*)dtl_print
+     print *, 'using user-defined dtl_print'
   else
-     print *, 'using default tl_diff'
+     print *, 'using default dtl_print'
   end if
   print 100,' tl dif = ',tl_diff
 
@@ -163,8 +163,8 @@ program tldiff
         dtl=abs(tl1(i,j)-tl2(i,j))
         ! compare to maximum difference in TL
         if (dtl.gt.dtl_max) dtl_max=dtl
-        ! compare to tl_diff
-        if(dtl.gt.tl_diff) then
+        ! compare to dtl_print
+        if(dtl.gt.dtl_print) then
            if (nerr.eq.0) then ! print table header on first error
               print'(/a)','   ix   iz    range    tl1    tl2 | diff'
               print*, repeat('-',33),'+',repeat('-',6)
@@ -184,7 +184,7 @@ program tldiff
               write(*,'(f7.1,a)',advance='no') tl2(i,j),' | '
            endif
 
-           if(dtl.gt.(tl_thresh)) then
+           if(dtl.gt.(dtl_error)) then
               if((tl1(i,j).gt.tlmax).or.(tl2(i,j).gt.tlmax))then
                  print '(a,f4.1,a)',''//achar(27)//'[33m',dtl,''//achar(27)//'[0m'
               else
@@ -195,16 +195,16 @@ program tldiff
               write(*,'(f4.1)') dtl
            endif
 
-           if((tl1(i,j).lt.tlmax).and.(tl2(i,j).lt.tlmax).and.(dtl.gt.(tl_thresh)))then
+           if((tl1(i,j).lt.tlmax).and.(tl2(i,j).lt.tlmax).and.(dtl.gt.(dtl_error)))then
               nerr3=nerr3+1
            endif
         endif
      enddo
   enddo
-  print '(/a,f6.3,a,i0)',' number of errors found (>',tl_diff,'): ',nerr
-  if(tl_red.ge.tl_diff) then
-     print '(a,f6.3,a,i0)',' number of errors found (>',tl_thresh,'): ',nerr2
-     print '(a,f6.3,a,f5.1,a,i0)',' number of errors found (>',tl_thresh,' and tl < ',tlmax,'): ',nerr3
+  print '(/a,f6.3,a,i0)',' number of errors found (>',dtl_print,'): ',nerr
+  if(tl_red.ge.dtl_print) then
+     print '(a,f6.3,a,i0)',' number of errors found (>',dtl_error,'): ',nerr2
+     print '(a,f6.3,a,f5.1,a,i0)',' number of errors found (>',dtl_error,' and tl < ',tlmax,'): ',nerr3
   endif
   print '(a,f6.3)',' maximum error : ',dtl_max
 
