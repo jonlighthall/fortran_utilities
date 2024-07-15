@@ -15,7 +15,7 @@ program tldiff
   real(kind=srk), dimension(:), allocatable :: r1,r2
   ! TL
   real(kind=srk), dimension(:,:), allocatable :: tl1,tl2
-  real(kind=srk)::dtl,dtl_max=0
+  real(kind=srk)::dtl,dtl_max=0,dtl_max2=0,dtl_max3=0
   ! arguments
   integer :: ln1,ln2,ln3
   ! file parameters
@@ -192,7 +192,7 @@ program tldiff
            write(*,'(2i5,f9.2)',advance='no') i,j,r1(i)
 
            if(tl1(i,j).gt.tlmax)then
-              write(*,'(a,f7.1,a)',advance='no') ''//achar(27)//'[31m',tl1(i,j),''//achar(27)//'[0m'
+              write(*,'(a,f7.1,a)',advance='no') ''//achar(27)//'[34m',tl1(i,j),''//achar(27)//'[0m'
            elseif(tl1(i,j).gt.tlmax2)then
               write(*,'(a,f7.1,a)',advance='no') ''//achar(27)//'[33m',tl1(i,j),''//achar(27)//'[0m'
            else
@@ -200,7 +200,7 @@ program tldiff
            endif
 
            if(tl2(i,j).gt.tlmax)then
-              write(*,'(a,f7.1,a,a)',advance='no') ''//achar(27)//'[31m',tl2(i,j),''//achar(27)//'[0m',' | '
+              write(*,'(a,f7.1,a,a)',advance='no') ''//achar(27)//'[34m',tl2(i,j),''//achar(27)//'[0m',' | '
            elseif(tl2(i,j).gt.tlmax2)then
               write(*,'(a,f7.1,a,a)',advance='no') ''//achar(27)//'[33m',tl2(i,j),''//achar(27)//'[0m',' | '
            else
@@ -209,6 +209,10 @@ program tldiff
 
            if(dtl.gt.(dtl_error)) then
               if((tl1(i,j).gt.tlmax).or.(tl2(i,j).gt.tlmax))then
+                 if (dtl.gt.dtl_max2) dtl_max2=dtl
+                 print 101,''//achar(27)//'[34m',dtl,''//achar(27)//'[0m'
+              elseif((tl1(i,j).gt.tlmax2).or.(tl2(i,j).gt.tlmax2))then
+                 if (dtl.gt.dtl_max3) dtl_max3=dtl
                  print 101,''//achar(27)//'[33m',dtl,''//achar(27)//'[0m'
               else
                  print 101,''//achar(27)//'[31m',dtl,''//achar(27)//'[0m'
@@ -228,11 +232,18 @@ program tldiff
         endif
      enddo
   enddo
-  print '(/a,f6.3,a,i0)',' number of errors found (>',tl_min_diff,'): ',nerr
-  print '(a,f6.3,a,i0)',' number of errors found (>',dtl_error,'): ',nerr2
-  print '(a,f6.3,a,f5.1,a,i0)',' number of errors found (>',dtl_error,' and tl < ',tlmax2,'): ',nerr3
-  print '(a,f6.3,a,f5.1,a,i0)',' number of errors found (>',dtl_error,' and tl < ',tlmax,'): ',nerr4
+  print*
+103 format(a,f6.3,a,i0)
+  print 103,' number of errors found (>',tl_min_diff,'): ',nerr
+  print 103,' number of errors found (>',dtl_error,'): ',nerr2
+104 format (a,f6.3,a,f5.1,a,i0)
+  print 104,' number of errors found (>',dtl_error,' and tl < ',tlmax,'): ',nerr4
+  print 104,' number of errors found (>',dtl_error,' and tl < ',tlmax2,'): ',nerr3
   print '(a,f6.3)',' maximum error : ',dtl_max
+105 format(a,f5.1,a,f6.3)
+  print 105,' maximum error (tl < ',tlmax2,'): ',dtl_max3
+  print 105,' maximum error (tl < ',tlmax,'): ',dtl_max2
+
   if(dtl_max-tl_min_diff.lt.comp_diff) print *, 'max diff equals min diff'
 
   print *, 'tl1 = ',trim(fname1)
