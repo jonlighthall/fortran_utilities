@@ -47,7 +47,8 @@ program tldiff
 100 format(a12,' = ',f7.3)
   print 100,'rng min dif',rng_min_diff
   print 100,'tl min dif',tl_min_diff
-  print 100,'tl max',tl_max_eps
+106 format(a12,a,f7.3,a)
+  print 106,'tl max',' = '//achar(27)//'[34m',tl_max_eps,''//achar(27)//'[0m'
 
   ! set file names
   if (ln1.eq.0) then
@@ -64,10 +65,10 @@ program tldiff
      print *, 'using default dtl_thresh'
   end if
 
-  print 100,' tl threh',dtl_thresh
+  print 106,'tl thresh',' = '//achar(27)//'[1;36m',dtl_thresh,''//achar(27)//'[0m'
   print 100,' tl diff',comp_diff
   dtl_error=dtl_thresh+comp_diff
-  print 100,' tl error',dtl_error
+  print 106,' tl error',' = '//achar(27)//'[31m',dtl_error,''//achar(27)//'[0m'
 
   if (tl_min_diff.gt.dtl_error) then
      print *, 'tl_min_diff < dtl_error'
@@ -230,7 +231,11 @@ program tldiff
               endif
               nerr2=nerr2+1
            else
-              write(*,101) '',dtl,''
+              if (abs(dtl-dtl_thresh).lt.comp_diff) then
+                 print 101,''//achar(27)//'[1;36m',dtl,''//achar(27)//'[0m'
+              else
+                 write(*,101) '',dtl,''
+              endif
            endif
 
            if((tl1(i,j).lt.tl_max_user).and.(tl2(i,j).lt.tl_max_user).and.(dtl.gt.(dtl_error)))then
