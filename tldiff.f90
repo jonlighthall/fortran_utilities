@@ -281,6 +281,7 @@ program tldiff
   print *, 'tl1 = ',trim(fname1)
   print *, 'tl2 = ',trim(fname2)
   if (nerr3.gt.0) then
+     print '(a,f5.1,a,f6.3,a,f6.3)',''//achar(27)//'[31m max diff (tl < ',tl_max_user,') ',dtl_max3,' greater than ',dtl_error
      print *, ''//achar(27)//'[31mERROR'//achar(27)//'[0m'
      stop 1
   else
