@@ -210,12 +210,20 @@ program tldiff
               write(*,'(f7.1,a)',advance='no') tl2(i,j),' | '
            endif
 
+           ! if both TL values are valid, check dTL against max
+           ! check against maximum TL value
+           if((tl1(i,j).lt.tl_max_eps).and.(tl2(i,j).lt.tl_max_eps))then
+              if (dtl.gt.dtl_max2) dtl_max2=dtl
+           endif
+           ! check against user-specified value
+           if((tl1(i,j).lt.tl_max_user).and.(tl2(i,j).lt.tl_max_user))then
+              if (dtl.gt.dtl_max3) dtl_max3=dtl
+           endif
+
            if(dtl.gt.(dtl_error)) then
               if((tl1(i,j).gt.tl_max_eps).or.(tl2(i,j).gt.tl_max_eps))then
-                 if (dtl.gt.dtl_max2) dtl_max2=dtl
                  print 101,''//achar(27)//'[34m',dtl,''//achar(27)//'[0m'
               elseif((tl1(i,j).gt.tl_max_user).or.(tl2(i,j).gt.tl_max_user))then
-                 if (dtl.gt.dtl_max3) dtl_max3=dtl
                  print 101,''//achar(27)//'[33m',dtl,''//achar(27)//'[0m'
               else
                  print 101,''//achar(27)//'[31m',dtl,''//achar(27)//'[0m'
@@ -244,8 +252,8 @@ program tldiff
   print 104,' number of errors found (>',dtl_error,' and tl < ',tl_max_user,'): ',nerr3
   print '(a,f6.3)',' maximum error : ',dtl_max
 105 format(a,f5.1,a,f6.3)
-  print 105,' maximum error (tl < ',tl_max_user,'): ',dtl_max3
-  print 105,' maximum error (tl < ',tl_max_eps,'): ',dtl_max2
+  if(dtl_max-dtl_max3.gt.comp_diff) print 105,' maximum error (tl < ',tl_max_user,'): ',dtl_max3
+  if(dtl_max-dtl_max2.gt.comp_diff) print 105,' maximum error (tl < ',tl_max_eps,'): ',dtl_max2
 
   if(dtl_max-tl_min_diff.lt.comp_diff) print *, 'max diff equals min diff'
 
