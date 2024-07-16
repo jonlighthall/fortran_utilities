@@ -247,15 +247,25 @@ program tldiff
 103 format(a,f6.3,a,i0)
   print 103,' number of errors found (>',tl_min_diff,'): ',nerr
   print 103,' number of errors found (>',dtl_error,'): ',nerr2
-104 format (a,f6.3,a,f5.1,a,i0)
-  print 104,' number of errors found (>',dtl_error,' and tl < ',tl_max_eps,'): ',nerr4
-  print 104,' number of errors found (>',dtl_error,' and tl < ',tl_max_user,'): ',nerr3
+104 format (a,f6.3,a,f5.1,a,i0,a)
+  if (nerr3.ne.nerr4) then
+     print 104,' number of errors found (>',dtl_error,' and tl < ',tl_max_eps,'): '//achar(27)//'[33m'&
+          &,nerr4,''//achar(27)//'[0m'
+  endif
+  if (nerr3.gt.0) then
+     print 104,' number of errors found (>',dtl_error,' and tl < ',tl_max_user,'): '//achar(27)//'[31m'&
+          &,nerr3,''//achar(27)//'[0m'
+  else
+     print 104,' number of errors found (>',dtl_error,' and tl < ',tl_max_user,'): '//achar(27)//'[32m'&
+          &,nerr3,''//achar(27)//'[0m'
+  endif
   print '(a,f6.3)',' maximum error : ',dtl_max
 105 format(a,f5.1,a,f6.3)
   if(dtl_max-dtl_max3.gt.comp_diff) print 105,' maximum error (tl < ',tl_max_user,'): ',dtl_max3
   if(dtl_max-dtl_max2.gt.comp_diff) print 105,' maximum error (tl < ',tl_max_eps,'): ',dtl_max2
 
-  if(dtl_max-tl_min_diff.lt.comp_diff) print *, 'max diff equals min diff'
+  if(dtl_max.lt.tl_min_diff) print *, ''//achar(27)//'[32mmax diff less than min diff'//achar(27)//'[0m'
+  if(abs(dtl_max-tl_min_diff).lt.comp_diff) print *, ''//achar(27)//'[33mmax diff equals min diff'//achar(27)//'[0m'
 
   print *, 'tl1 = ',trim(fname1)
   print *, 'tl2 = ',trim(fname2)
