@@ -263,9 +263,15 @@ program tldiff
 105 format(a,f5.1,a,f6.3)
   if(dtl_max-dtl_max3.gt.comp_diff) print 105,' maximum error (tl < ',tl_max_user,'): ',dtl_max3
   if(dtl_max-dtl_max2.gt.comp_diff) print 105,' maximum error (tl < ',tl_max_eps,'): ',dtl_max2
-
-  if(dtl_max.lt.tl_min_diff) print *, ''//achar(27)//'[32mmax diff less than min diff'//achar(27)//'[0m'
-  if(abs(dtl_max-tl_min_diff).lt.comp_diff) print *, ''//achar(27)//'[33mmax diff equals min diff'//achar(27)//'[0m'
+  if (abs(dtl_max-tl_min_diff).lt.comp_diff) then
+     print *, ''//achar(27)//'[33mmax diff equals min diff'//achar(27)//'[0m'
+  elseif (abs(dtl_max2-tl_min_diff).lt.comp_diff) then
+     print 105,''//achar(27)//'[33m max diff (tl < ',tl_max_eps,') equals min diff'//achar(27)//'[0m'
+  else
+     if(dtl_max.lt.tl_min_diff) then
+        print *, ''//achar(27)//'[32mmax diff less than min diff'//achar(27)//'[0m'
+     endif
+  endif
 
   print *, 'tl1 = ',trim(fname1)
   print *, 'tl2 = ',trim(fname2)
