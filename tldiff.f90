@@ -184,7 +184,7 @@ program tldiff
         ! compare to maximum difference in TL
         if (dtl.gt.dtl_max) dtl_max=dtl
         ! compare to tl_min_diff
-        if(dtl.gt.tl_min_diff) then
+        if(dtl.gt.comp_diff) then
            if (nerr.eq.0) then ! print table header on first error
               print'(/a)','   ix   iz    range    tl1    tl2 | diff'
               print*, repeat('-',33),'+',repeat('-',6)
